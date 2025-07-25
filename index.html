@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <!-- Google tag (gtag.js) -->
+  <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9NZQDFD7DW"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -77,6 +77,8 @@
             position: relative;
             z-index: 1;
         }
+        /* レベルごとのグリッド設定（PC/タブレット向け） */
+        /* カード1枚の幅を約70px、隙間12pxとして計算 */
         .game-board.level-1-grid { grid-template-columns: repeat(2, 1fr); max-width: 152px; }
         .game-board.level-2-grid { grid-template-columns: repeat(3, 1fr); max-width: 234px; }
         .game-board.level-3-grid { grid-template-columns: repeat(4, 1fr); max-width: 316px; }
@@ -188,26 +190,26 @@
         .button-container {
             margin: 20px 0;
             width: 100%;
-            max-width: 600px; /* ボタンの最大幅を大きく */
+            max-width: 600px;
             display: flex;
             justify-content: center;
-            gap: 4px; /* ボタン間の最小間隔を1mm（4px）確保 */
+            gap: 4px;
         }
         button {
-            padding: 20px 40px; /* 縦横のパディングを大幅に増加 */
-            width: 100%; /* 親コンテナの幅を最大限に活用 */
-            max-width: 550px; /* ボタン自体の最大幅を設定 */
+            padding: 20px 40px;
+            width: 100%;
+            max-width: 550px;
             font-family: 'Poppins', sans-serif;
-            font-size: 1.8em; /* フォントサイズをさらに大きく */
+            font-size: 1.8em;
             background: linear-gradient(135deg, #38b2ac, #4299e1);
             color: #fff;
             border: none;
-            border-radius: 60px; /* 角丸をより大きく */
+            border-radius: 60px;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-            text-transform: uppercase; /* テキストを大文字にして強調 */
-            letter-spacing: 1px; /* 文字間隔を広げて高級感を */
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         button:hover {
             background: linear-gradient(135deg, #2c7a7b, #2b6cb0);
@@ -315,7 +317,7 @@
                 gap: 4px;
             }
             button {
-                padding: 18px 30px;
+                padding: 18px 25px;
                 font-size: 1.5em;
                 max-width: 100%;
                 border-radius: 50px;
@@ -341,7 +343,7 @@
                 gap: 4px;
             }
             button {
-                padding: 16px 25px;
+                padding: 16px 20px;
                 font-size: 1.3em;
                 max-width: 100%;
                 border-radius: 40px;
@@ -396,6 +398,26 @@
         // Web Audio APIの初期化
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioContext = new AudioContext();
+
+        // ★AudioContextの確実な起動処理を追加★
+        // ユーザーが最初にドキュメントをタップ/クリックしたときにAudioContextを再開する
+        function resumeAudioContext() {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log('AudioContext resumed successfully');
+                }).catch(error => {
+                    console.error('Failed to resume AudioContext:', error);
+                });
+            }
+            // イベントリスナーは一度だけ実行すればよいので削除
+            document.removeEventListener('click', resumeAudioContext);
+            document.removeEventListener('touchend', resumeAudioContext);
+        }
+
+        // ページロード時にイベントリスナーを設定
+        document.addEventListener('click', resumeAudioContext);
+        document.addEventListener('touchend', resumeAudioContext);
+
         // ドレミファソラシドの周波数 (Hz)
         const frequencies = {
             'ド': 261.63, // C4
@@ -426,10 +448,18 @@
             gainNode.gain.setValueAtTime(0, audioContext.currentTime);
             gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.05);
             gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + duration);
+            
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
+            
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + duration);
+
+            // ノードを明示的に切断
+            oscillator.onended = () => {
+                oscillator.disconnect(gainNode);
+                gainNode.disconnect(audioContext.destination);
+            };
         }
         // ファンファーレ
         function playFanfare() {
@@ -449,10 +479,18 @@
                 const gainNode = audioContext.createGain();
                 gainNode.gain.setValueAtTime(0.7, startTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.00001, startTime + fNote.duration);
+                
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
+                
                 oscillator.start(startTime);
                 oscillator.stop(startTime + fNote.duration);
+
+                // ノードを明示的に切断
+                oscillator.onended = () => {
+                    oscillator.disconnect(gainNode);
+                    gainNode.disconnect(audioContext.destination);
+                };
                 startTime += fNote.duration;
             });
         }
@@ -467,10 +505,18 @@
                     const gainNode = audioContext.createGain();
                     gainNode.gain.setValueAtTime(masterGainValue, startTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.00001, startTime + duration);
+                    
                     oscillator.connect(gainNode);
                     gainNode.connect(audioContext.destination);
+                    
                     oscillator.start(startTime);
                     oscillator.stop(startTime + duration);
+
+                    // ノードを明示的に切断
+                    oscillator.onended = () => {
+                        oscillator.disconnect(gainNode);
+                        gainNode.disconnect(audioContext.destination);
+                    };
                 });
             }
             playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now, 0.5, 0.9, 'sawtooth');
@@ -647,7 +693,7 @@
                 const currentLevelId = levels[currentLevelIndex].id;
                 setTimeout(() => {
                     messageDisplay.textContent = `レベル${currentLevelId} クリア！おめでとう！`;
-                    if (currentLevelIndex === levels.length - 1) {
+                    if (currentLevelIndex === levels.length - 1) { // 最終レベルのIDが4なので、levels.length-1 (配列インデックス3) に対応
                         playGrandFanfare();
                     } else {
                         playFanfare();
