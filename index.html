@@ -15,6 +15,7 @@
     <title>🎵 音当て神経衰弱 - レベルモード 🎵</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
     <style>
+        /* (CSSは変更ありません) */
         /* リセットと基本スタイル */
         * {
             margin: 0;
@@ -425,7 +426,7 @@
             masterGain.gain.value = 1;
             masterGain.connect(audioContext.destination);
 
-            // AudioContextの状態変化を監視 (デバッグ用)
+            // ★AudioContextの状態変化を監視 (再構築時に再設定)
             audioContext.onstatechange = () => {
                 console.log('[Audio] state:', audioContext.state);
             };
@@ -434,11 +435,9 @@
         recreateAudioGraph(); // ★初回読み込み時にもこの関数で初期化
 
         // ★AudioContextの確実な起動処理★
-        // ユーザーが最初にドキュメントをタップ/クリックしたときにAudioContextを再開する
         async function resumeAudioContextIfNeeded() {
             if (!audioContext) recreateAudioGraph(); // 万一audioContextがnullの場合も再構築
 
-            // AudioContextがsuspended状態かinterrupted状態であればresumeを試みる
             if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
                 try {
                     await audioContext.resume();
@@ -749,12 +748,10 @@
             displayRanking(currentLevelConfig.id);
         }
         // カードめくり
-        function flipCard() {
+        async function flipCard() { // ★async関数に変更
             if (isTransitioning) return;
             if (lockBoard) return;
             if (this === firstCard) return;
-            
-            resumeAudioContextIfNeeded(); 
             
             if (!timerStarted) {
                 startTimer();
@@ -762,7 +759,7 @@
                 messageDisplay.textContent = `レベル${levels[currentLevelIndex].id}をプレイ中！`;
             }
             this.classList.add('flipped');
-            playNote(this.dataset.note);
+            await playNote(this.dataset.note); // ★playNoteの完了を待つ
             if (!hasFlippedCard) {
                 hasFlippedCard = true;
                 firstCard = this;
