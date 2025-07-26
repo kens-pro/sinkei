@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-  <!-- Google tag (gtag.js) -->
+    <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9NZQDFD7DW"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -395,28 +395,52 @@
     </div>
     <div id="confettiContainer" class="confetti-container"></div>
     <script>
-        // Web Audio APIの初期化
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioContext = new AudioContext();
+        // Web Audio APIの初期化 (global scope)
+        let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-        // ★AudioContextの確実な起動処理を追加★
+        // ★AudioContextの確実な起動処理★
         // ユーザーが最初にドキュメントをタップ/クリックしたときにAudioContextを再開する
-        function resumeAudioContext() {
-            if (audioContext.state === 'suspended') {
+        function resumeAudioContextIfNeeded() {
+            // AudioContextがsuspended状態かclosed状態であれば再開を試みる
+            if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
                 audioContext.resume().then(() => {
-                    console.log('AudioContext resumed successfully');
+                    console.log('AudioContext resumed successfully. State:', audioContext.state);
                 }).catch(error => {
                     console.error('Failed to resume AudioContext:', error);
                 });
+            } else if (audioContext.state === 'closed') {
+                // AudioContextがclosedになっていたら作り直す
+                console.warn('AudioContext was closed, recreating it.');
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                // 新しいAudioContextがsuspended状態になる可能性があるので、再度resumeを試みる
+                audioContext.resume().then(() => {
+                    console.log('New AudioContext created and resumed successfully. State:', audioContext.state);
+                }).catch(error => {
+                    console.error('Failed to resume new AudioContext:', error);
+                });
             }
-            // イベントリスナーは一度だけ実行すればよいので削除
-            document.removeEventListener('click', resumeAudioContext);
-            document.removeEventListener('touchend', resumeAudioContext);
         }
 
-        // ページロード時にイベントリスナーを設定
-        document.addEventListener('click', resumeAudioContext);
-        document.addEventListener('touchend', resumeAudioContext);
+        // ページロード後にイベントリスナーを設定（これらは削除しない）
+        // ユーザーの最初の操作、または中断からの復帰時にAudioContextをresume
+        document.addEventListener('pointerdown', resumeAudioContextIfNeeded, { passive: true });
+        document.addEventListener('touchstart', resumeAudioContextIfNeeded, { passive: true }); // iOS配慮
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                console.log('Visibility changed to visible. Attempting to resume AudioContext.');
+                resumeAudioContextIfNeeded();
+            }
+        });
+        window.addEventListener('pageshow', () => { // ブラウザの「戻る」ボタンなどでキャッシュから復帰した場合
+            console.log('Pageshow event. Attempting to resume AudioContext.');
+            resumeAudioContextIfNeeded();
+        });
+
+        // AudioContextの状態変化を監視 (デバッグ用)
+        audioContext.onstatechange = () => {
+            console.log('AudioContext State Changed:', audioContext.state);
+        };
+
 
         // ドレミファソラシドの周波数 (Hz)
         const frequencies = {
@@ -439,30 +463,43 @@
         ];
         // 音を再生する関数（エンベロープ改善）
         function playNote(noteName, duration = 0.5) {
+            resumeAudioContextIfNeeded(); // 再生前に必ずAudioContextの状態を確認
+
             const frequency = frequencies[noteName];
             if (!frequency) return;
             const oscillator = audioContext.createOscillator();
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
             const gainNode = audioContext.createGain();
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.05);
-            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + duration);
+
+            const t0 = audioContext.currentTime;
+            const t1 = t0 + duration;
+            
+            gainNode.gain.setValueAtTime(0, t0); // 開始時に音量ゼロ
+            gainNode.gain.linearRampToValueAtTime(0.5, t0 + 0.05); // 素早くフェードイン
+            gainNode.gain.linearRampToValueAtTime(0.0001, t1 - 0.02); // 停止の少し前に極小値までフェードアウト
+            gainNode.gain.setValueAtTime(0, t1); // 停止時に音量ゼロにピン留め
             
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
             
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + duration);
+            oscillator.start(t0);
+            oscillator.stop(t1);
 
-            // ノードを明示的に切断
+            // ノードを明示的に切断 (オンデマンドでAudioContextから切り離す)
             oscillator.onended = () => {
-                oscillator.disconnect(gainNode);
-                gainNode.disconnect(audioContext.destination);
+                try {
+                    oscillator.disconnect(gainNode);
+                    gainNode.disconnect(audioContext.destination);
+                } catch (e) {
+                    console.error("Error disconnecting audio nodes:", e);
+                }
             };
         }
         // ファンファーレ
         function playFanfare() {
+            resumeAudioContextIfNeeded(); // 再生前に必ずAudioContextの状態を確認
+
             const fanfareNotes = [
                 { note: 'ド', duration: 0.2 },
                 { note: 'ミ', duration: 0.2 },
@@ -477,25 +514,36 @@
                 oscillator.type = 'triangle';
                 oscillator.frequency.setValueAtTime(frequency, startTime);
                 const gainNode = audioContext.createGain();
-                gainNode.gain.setValueAtTime(0.7, startTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.00001, startTime + fNote.duration);
+
+                const t0 = startTime;
+                const t1 = t0 + fNote.duration;
+
+                gainNode.gain.setValueAtTime(0, t0);
+                gainNode.gain.linearRampToValueAtTime(0.7, t0 + 0.05);
+                gainNode.gain.linearRampToValueAtTime(0.0001, t1 - 0.02);
+                gainNode.gain.setValueAtTime(0, t1);
                 
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
                 
-                oscillator.start(startTime);
-                oscillator.stop(startTime + fNote.duration);
+                oscillator.start(t0);
+                oscillator.stop(t1);
 
-                // ノードを明示的に切断
                 oscillator.onended = () => {
-                    oscillator.disconnect(gainNode);
-                    gainNode.disconnect(audioContext.destination);
+                    try {
+                        oscillator.disconnect(gainNode);
+                        gainNode.disconnect(audioContext.destination);
+                    } catch (e) {
+                        console.error("Error disconnecting audio nodes:", e);
+                    }
                 };
                 startTime += fNote.duration;
             });
         }
         // グランドファンファーレ
         function playGrandFanfare() {
+            resumeAudioContextIfNeeded(); // 再生前に必ずAudioContextの状態を確認
+
             const now = audioContext.currentTime;
             function playChord(chordFrequencies, startTime, duration, masterGainValue = 0.8, type = 'sawtooth') {
                 chordFrequencies.forEach(freq => {
@@ -503,19 +551,28 @@
                     oscillator.type = type;
                     oscillator.frequency.setValueAtTime(freq, startTime);
                     const gainNode = audioContext.createGain();
-                    gainNode.gain.setValueAtTime(masterGainValue, startTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.00001, startTime + duration);
+
+                    const t0 = startTime;
+                    const t1 = t0 + duration;
+
+                    gainNode.gain.setValueAtTime(0, t0);
+                    gainNode.gain.linearRampToValueAtTime(masterGainValue, t0 + 0.05);
+                    gainNode.gain.linearRampToValueAtTime(0.0001, t1 - 0.02);
+                    gainNode.gain.setValueAtTime(0, t1);
                     
                     oscillator.connect(gainNode);
                     gainNode.connect(audioContext.destination);
                     
-                    oscillator.start(startTime);
-                    oscillator.stop(startTime + duration);
+                    oscillator.start(t0);
+                    oscillator.stop(t1);
 
-                    // ノードを明示的に切断
                     oscillator.onended = () => {
-                        oscillator.disconnect(gainNode);
-                        gainNode.disconnect(audioContext.destination);
+                        try {
+                            oscillator.disconnect(gainNode);
+                            gainNode.disconnect(audioContext.destination);
+                        } catch (e) {
+                            console.error("Error disconnecting audio nodes:", e);
+                        }
                     };
                 });
             }
@@ -649,6 +706,9 @@
         function flipCard() {
             if (lockBoard) return;
             if (this === firstCard) return;
+            // AudioContextがsuspended/closedになってたらここで再開を試みる
+            resumeAudioContextIfNeeded(); 
+            
             if (!timerStarted) {
                 startTimer();
                 timerStarted = true;
