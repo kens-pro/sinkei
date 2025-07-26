@@ -614,6 +614,7 @@
 
         // 全体フェード（非常停止用・短時間） - setTimeoutを使わないバージョン
         function fadeOutAllAudio(ms = 120) {
+            if (!audioContext || audioContext.state === 'closed') return;
             const t = audioContext.currentTime;
             masterGain.gain.cancelScheduledValues(t);
             masterGain.gain.setValueAtTime(masterGain.gain.value, t);
