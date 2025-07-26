@@ -235,54 +235,58 @@
         }
         .ranking-section h2 {
             font-family: 'Poppins', sans-serif;
-            color: #2b6cb0;
-            margin-bottom: 15px;
-            font-size: 1.6em;
+            color:#2b6cb0;
+            margin-bottom:15px;
+            font-size:1.6em;
         }
         #rankingTable {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 1em;
+            width:100%;
+            border-collapse:collapse;
+            font-size:1em;
             margin: 0 auto;
             min-width: 250px;
         }
         #rankingTable th,
         #rankingTable td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
+            padding:10px;
+            text-align:left;
+            border-bottom:1px solid #e2e8f0;
         }
         #rankingTable th {
-            color: #4a5568;
-            font-weight: 600;
+            color:#4a5568;
+            font-weight:600;
         }
         #rankingTable td.rank-time {
-            color: #e53e3e;
-            font-weight: 700;
+            color:#e53e3e;
+            font-weight:700;
             text-align: right;
         }
         #rankingTable tr:hover {
-            background: rgba(203, 213, 225, 0.3);
-            cursor: default;
+            background:rgba(203,213,225,0.3);
+            cursor:default;
         }
         /* 紙吹雪アニメーション */
         .confetti-container {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1000;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            pointer-events:none;
+            z-index:1000;
             overflow: hidden;
+            /* パフォーマンス改善：描画内容を隔離 */
+            contain: layout paint; 
         }
         .confetti {
             position: absolute;
-            width: 12px;
-            height: 12px;
-            opacity: 0;
+            width:12px;
+            height:12px;
+            opacity:0;
             animation: fall 4s ease-out forwards, sway 2s ease-in-out alternate infinite;
             transform-origin: center center;
+            /* パフォーマンス改善：描画エンジンに変化を通知 */
+            will-change: transform, opacity; 
         }
         @keyframes fall {
             0% { transform: translateY(-100vh) rotateZ(0deg); opacity: 0; }
@@ -327,7 +331,12 @@
         }
         @media (max-width: 600px) {
             h1 { font-size: 1.8em; margin-bottom: 15px; }
-            .game-board-container { padding: 10px; }
+            .game-board-container { 
+                padding: 10px;
+                /* パフォーマンス改善：backdrop-filterをオフ */
+                backdrop-filter: none;
+                background: rgba(255,255,255,0.85); 
+            }
             .game-board { gap: 8px; }
             .game-board.level-1-grid { max-width: 108px; }
             .game-board.level-2-grid { grid-template-columns: repeat(3, 1fr); max-width: 166px; }
@@ -373,6 +382,15 @@
             }
             .ranking-section { max-width: 250px; }
         }
+        /* 低スペック・モバイルでアニメーション最小化 */
+        @media (prefers-reduced-motion: reduce) {
+            * { 
+                animation: none !important; 
+                transition: none !important; 
+            }
+            .card:hover { transform: none !important; }
+            .button-container button:hover { transform: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -401,7 +419,7 @@
         // ★AudioContextの確実な起動処理★
         // ユーザーが最初にドキュメントをタップ/クリックしたときにAudioContextを再開する
         function resumeAudioContextIfNeeded() {
-            // AudioContextがsuspended状態かclosed状態であれば再開を試みる
+            // AudioContextがsuspended状態かinterrupted状態であればresumeを試みる
             if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
                 audioContext.resume().then(() => {
                     console.log('AudioContext resumed successfully. State:', audioContext.state);
@@ -412,7 +430,7 @@
                 // AudioContextがclosedになっていたら作り直す
                 console.warn('AudioContext was closed, recreating it.');
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                // 新しいAudioContextがsuspended状態になる可能性があるので、再度resumeを試みる
+                // 新しいAudioContextもsuspended状態になる可能性があるので、再度resumeを試みる
                 audioContext.resume().then(() => {
                     console.log('New AudioContext created and resumed successfully. State:', audioContext.state);
                 }).catch(error => {
@@ -461,12 +479,14 @@
             { id: 3, name: 'ドレミファソ', notes: ['ド', 'レ', 'ミ', 'ファ', 'ソ'], pairs: 5, gridClass: 'level-3-grid' },
             { id: 4, name: 'ドレミファソラシド', notes: allNoteNames, pairs: 8, gridClass: 'level-4-grid' }
         ];
+
         // 音を再生する関数（エンベロープ改善）
         function playNote(noteName, duration = 0.5) {
             resumeAudioContextIfNeeded(); // 再生前に必ずAudioContextの状態を確認
 
             const frequency = frequencies[noteName];
-            if (!frequency) return;
+            if (!frequency) return 0; // 周波数がなければ0を返す
+
             const oscillator = audioContext.createOscillator();
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
@@ -495,18 +515,22 @@
                     console.error("Error disconnecting audio nodes:", e);
                 }
             };
+            return duration; // 再生時間を返す
         }
-        // ファンファーレ
+
+        // 通常のファンファーレを再生する関数
         function playFanfare() {
             resumeAudioContextIfNeeded(); // 再生前に必ずAudioContextの状態を確認
 
             const fanfareNotes = [
-                { note: 'ド', duration: 0.2 },
-                { note: 'ミ', duration: 0.2 },
-                { note: 'ソ', duration: 0.2 },
-                { note: '高ド', duration: 0.4 }
+                { note: 'ド', dur: 0.2 },
+                { note: 'ミ', dur: 0.2 },
+                { note: 'ソ', dur: 0.2 },
+                { note: '高ド', dur: 0.4 }
             ];
             let startTime = audioContext.currentTime;
+            let totalDuration = 0; // 総再生時間
+
             fanfareNotes.forEach(fNote => {
                 const frequency = frequencies[fNote.note];
                 if (!frequency) return;
@@ -516,7 +540,7 @@
                 const gainNode = audioContext.createGain();
 
                 const t0 = startTime;
-                const t1 = t0 + fNote.duration;
+                const t1 = t0 + fNote.dur;
 
                 gainNode.gain.setValueAtTime(0, t0);
                 gainNode.gain.linearRampToValueAtTime(0.7, t0 + 0.05);
@@ -537,14 +561,19 @@
                         console.error("Error disconnecting audio nodes:", e);
                     }
                 };
-                startTime += fNote.duration;
+                startTime += fNote.dur;
+                totalDuration += fNote.dur;
             });
+            return totalDuration; // 総再生時間を返す
         }
-        // グランドファンファーレ
+
+        // グランドファンファーレを再生する関数
         function playGrandFanfare() {
             resumeAudioContextIfNeeded(); // 再生前に必ずAudioContextの状態を確認
 
             const now = audioContext.currentTime;
+            let maxDuration = 0; // 最大再生時間
+
             function playChord(chordFrequencies, startTime, duration, masterGainValue = 0.8, type = 'sawtooth') {
                 chordFrequencies.forEach(freq => {
                     const oscillator = audioContext.createOscillator();
@@ -575,19 +604,27 @@
                         }
                     };
                 });
+                maxDuration = Math.max(maxDuration, duration + (startTime - now)); // 相対的な終了時刻を計算
             }
+
+            // グランドファンファーレのシーケンス
             playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now, 0.5, 0.9, 'sawtooth');
             playChord([frequencies['ソ'], frequencies['シ'], frequencies['レ']], now + 0.5, 0.5, 0.9, 'sawtooth');
             playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now + 1.0, 1.0, 1.0, 'sawtooth');
+            
+            // 補助フレーズ（約0.4秒）
             setTimeout(() => {
-                const notes = ['ド', '高ド', 'ソ', 'ド'];
-                let delay = 0;
-                notes.forEach(note => {
-                    setTimeout(() => playNote(note, 0.15), delay);
-                    delay += 100;
+                let arpeggioDelay = 0;
+                ['ド','高ド','ソ','ド'].forEach((n,i)=>{
+                    setTimeout(()=>playNote(n,0.15), arpeggioDelay);
+                    arpeggioDelay += 100; // 0.1秒間隔で次の音
                 });
-            }, 1000);
+            }, 1000); // 1秒後くらいに開始
+
+            // グランドファンファーレの総尺をざっくり計算して返す
+            return Math.max(maxDuration, 1.0 + 0.4); // メインコード2.0秒 + アルペジオの最大値
         }
+
         // ゲームの状態変数
         const gameBoard = document.getElementById('gameBoard');
         const remainingPairsDisplay = document.getElementById('remainingPairs');
@@ -610,6 +647,15 @@
         let timerIntervalId;
         const RANKING_PREFIX = 'memoryGameRanking_level';
         const MAX_RANKING_ENTRIES = 5;
+
+        // 端末性能に応じた紙吹雪の枚数調整
+        const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+        // navigator.deviceMemory は一部ブラウザのみ対応。未対応ならデフォルト4GBとする
+        const deviceMemoryGB = navigator.deviceMemory || 4; 
+        const CONFETTI_COUNT = (deviceMemoryGB <= 2 || isMobile) ? 40 : 100;
+        console.log(`Device Memory: ${deviceMemoryGB}GB, Is Mobile: ${isMobile}, Confetti Count: ${CONFETTI_COUNT}`);
+
+
         // タイマー開始
         function startTimer() {
             startTime = performance.now();
@@ -645,26 +691,17 @@
         function displayRanking(level) {
             const ranking = getRanking(level);
             rankingTitle.textContent = `🏆 ランキング (レベル${level}) 🏆`;
-            rankingTable.innerHTML = `
-                <thead>
-                    <tr><th>順位</th><th>名前</th><th>タイム</th></tr>
-                </thead>
-                <tbody></tbody>
-            `;
-            const tbody = rankingTable.querySelector('tbody');
+            // 一度HTML文字列を構築してからまとめて挿入
+            const header = `<thead><tr><th>順位</th><th>名前</th><th>タイム</th></tr></thead>`;
+            let rowsHtml = '';
             if (ranking.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3">まだ記録がありません。</td></tr>';
-                return;
+                rowsHtml = '<tr><td colspan="3">まだ記録がありません。</td></tr>';
+            } else {
+                rowsHtml = ranking.map((entry, index) =>
+                    `<tr><td>${index + 1}位</td><td>${entry.name}</td><td class="rank-time">${entry.time.toFixed(2)} 秒</td></tr>`
+                ).join('');
             }
-            ranking.forEach((entry, index) => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${index + 1}位</td>
-                        <td>${entry.name}</td>
-                        <td class="rank-time">${entry.time.toFixed(2)} 秒</td>
-                    </tr>
-                `;
-            });
+            rankingTable.innerHTML = header + `<tbody>${rowsHtml}</tbody>`;
         }
         // ゲーム初期化
         function initializeGame() {
@@ -677,14 +714,20 @@
             timerDisplay.textContent = '0.00';
             clearInterval(timerIntervalId);
             timerStarted = false;
-            gameBoard.innerHTML = '';
-            confettiContainer.innerHTML = '';
-            gameBoard.className = 'game-board';
-            gameBoard.classList.add(currentLevelConfig.gridClass);
-            let selectedNotes = [...currentLevelConfig.notes];
-            let gameNotes = [...selectedNotes, ...selectedNotes];
-            gameNotes.sort(() => 0.5 - Math.random());
-            cards = [];
+            confettiContainer.innerHTML = ''; // 紙吹雪をクリア
+
+            // gameBoardのDOM更新を requestAnimationFrame でバッチ処理
+            gameBoard.className = 'game-board ' + currentLevelConfig.gridClass; // クラスは先に適用
+            
+            // 古いカードを削除
+            while(gameBoard.firstChild) {
+                gameBoard.removeChild(gameBoard.firstChild);
+            }
+
+            const gameNotes = [...currentLevelConfig.notes, ...currentLevelConfig.notes].sort(() => Math.random() - 0.5);
+            const fragment = document.createDocumentFragment(); // DocumentFragmentを作成
+            cards = []; // カード配列をリセット
+
             gameNotes.forEach(note => {
                 const cardElement = document.createElement('div');
                 cardElement.classList.add('card');
@@ -695,10 +738,15 @@
                         <div class="card-back"></div>
                     </div>
                 `;
-                gameBoard.appendChild(cardElement);
+                cardElement.addEventListener('click', flipCard, { passive: true }); // passive: true でスクロールパフォーマンス改善
                 cards.push(cardElement);
-                cardElement.addEventListener('click', flipCard);
+                fragment.appendChild(cardElement); // fragmentに追加
             });
+
+            requestAnimationFrame(() => {
+                gameBoard.appendChild(fragment); // 一度にDOMに追加
+            });
+            
             resetBoard();
             displayRanking(currentLevelConfig.id);
         }
@@ -751,14 +799,18 @@
             if (matchedPairs === totalPairs) {
                 const finalTime = stopTimer();
                 const currentLevelId = levels[currentLevelIndex].id;
+
+                // ① 音の再生を最優先でスケジュール
+                const fanfareSec = (currentLevelIndex === levels.length - 1)
+                    ? playGrandFanfare() // 最終レベルならグランドファンファーレ
+                    : playFanfare();     // それ以外なら通常のファンファーレ
+
+                // ② 軽いUIの更新と紙吹雪の開始
+                messageDisplay.textContent = `レベル${currentLevelId} クリア！おめでとう！`;
+                launchConfetti(); 
+
+                // ③ ブロッキングするprompt()や重いDOM更新を少し遅れて実行
                 setTimeout(() => {
-                    messageDisplay.textContent = `レベル${currentLevelId} クリア！おめでとう！`;
-                    if (currentLevelIndex === levels.length - 1) { // 最終レベルのIDが4なので、levels.length-1 (配列インデックス3) に対応
-                        playGrandFanfare();
-                    } else {
-                        playFanfare();
-                    }
-                    launchConfetti();
                     let playerName = prompt(`おめでとう！レベル${currentLevelId}を ${finalTime.toFixed(2)} 秒でクリアしたよ！\n名前を教えてね:`, "ななしさん");
                     if (playerName === null || playerName.trim() === "") {
                         playerName = "ななしさん";
@@ -766,18 +818,20 @@
                         playerName = playerName.trim().substring(0, 10);
                     }
                     saveRanking(currentLevelId, finalTime, playerName);
-                    displayRanking(currentLevelId);
+                    displayRanking(currentLevelId); // 軽量化されたランキング表示
+
+                    // 次のレベルへの遷移
                     currentLevelIndex++;
                     if (currentLevelIndex < levels.length) {
                         setTimeout(() => {
                             messageDisplay.textContent = `次のレベル${levels[currentLevelIndex].id}へ！`;
-                            initializeGame();
-                        }, 3000);
+                            initializeGame(); // 次のレベルを開始
+                        }, Math.max(300, (fanfareSec * 1000) - 200)); // ファンファーレが終わる少し前に開始するように調整
                     } else {
                         messageDisplay.textContent = '全レベルクリア！素晴らしい！';
-                        currentLevelIndex = 0;
+                        currentLevelIndex = 0; // 全レベルクリアしたらレベル1に戻る準備
                     }
-                }, 800);
+                }, 150); // ファンファーレが鳴り始めてから150ms後にプロンプトなどを表示
             }
         }
         // マッチしない場合
@@ -797,20 +851,29 @@
         // 紙吹雪
         function launchConfetti() {
             const colors = ['#ed64a6', '#38b2ac', '#f6ad55', '#4299e1', '#f56565'];
-            const numConfetti = 100;
-            for (let i = 0; i < numConfetti; i++) {
+            // confetticontainerをクリア
+            confettiContainer.innerHTML = ''; 
+            const fragment = document.createDocumentFragment(); // DocumentFragmentを作成
+
+            for (let i = 0; i < CONFETTI_COUNT; i++) {
                 const confetti = document.createElement('div');
                 confetti.classList.add('confetti');
+                
                 confetti.style.left = Math.random() * 100 + 'vw';
                 confetti.style.animationDelay = Math.random() * 2.5 + 's';
                 confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
                 const size = Math.random() * 10 + 5;
                 confetti.style.width = size + 'px';
                 confetti.style.height = size + 'px';
                 confetti.style.transform = `rotateZ(${Math.random() * 360}deg)`;
-                confettiContainer.appendChild(confetti);
+
+                fragment.appendChild(confetti); // fragmentに追加
                 confetti.addEventListener('animationend', () => confetti.remove());
             }
+            requestAnimationFrame(() => {
+                confettiContainer.appendChild(fragment); // 一度にDOMに追加
+            });
         }
         // リセットボタン
         resetButton.addEventListener('click', () => {
