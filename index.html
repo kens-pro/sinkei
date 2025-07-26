@@ -15,7 +15,7 @@
     <title>🎵 絶対音感ゲーム（神経衰弱版）🎵</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
     <style>
-        /* (CSSは変更ありません) */
+        /* (CSSを一部修正) */
         /* リセットと基本スタイル */
         * {
             margin: 0;
@@ -84,6 +84,8 @@
         .game-board.level-2-grid { grid-template-columns: repeat(3, 1fr); max-width: 234px; }
         .game-board.level-3-grid { grid-template-columns: repeat(4, 1fr); max-width: 316px; }
         .game-board.level-4-grid { grid-template-columns: repeat(4, 1fr); max-width: 316px; }
+        .game-board.level-5-grid { grid-template-columns: repeat(5, 1fr); max-width: 398px; } /* ★レベル5追加 (70*5 + 12*4) */
+        
         /* カードデザイン（ガラスモーフィズム） */
         .card {
             width: 100%;
@@ -312,6 +314,8 @@
             .game-board.level-2-grid { grid-template-columns: repeat(3, 1fr); max-width: 200px; }
             .game-board.level-3-grid { grid-template-columns: repeat(3, 1fr); max-width: 200px; }
             .game-board.level-4-grid { grid-template-columns: repeat(4, 1fr); max-width: 270px; }
+            .game-board.level-5-grid { grid-template-columns: repeat(4, 1fr); max-width: 270px; } /* ★レベル5追加 */
+
             .card { max-width: 60px; border-radius: 10px; }
             .card-front { width: calc(100% - 8px); height: calc(100% - 8px); border-radius: 8px; }
             .card-back::before { font-size: 2.2em; }
@@ -343,6 +347,8 @@
             .game-board.level-2-grid { grid-template-columns: repeat(3, 1fr); max-width: 166px; }
             .game-board.level-3-grid { grid-template-columns: repeat(3, 1fr); max-width: 166px; }
             .game-board.level-4-grid { grid-template-columns: repeat(3, 1fr); max-width: 166px; }
+            .game-board.level-5-grid { grid-template-columns: repeat(3, 1fr); max-width: 166px; } /* ★レベル5追加 */
+
             .card { max-width: 50px; border-radius: 8px; }
             .card-front { width: calc(100% - 6px); height: calc(100% - 6px); border-radius: 6px; }
             .card-back::before { font-size: 1.8em; }
@@ -367,6 +373,8 @@
             .game-board.level-2-grid { grid-template-columns: repeat(2, 1fr); max-width: 86px; }
             .game-board.level-3-grid { grid-template-columns: repeat(2, 1fr); max-width: 86px; }
             .game-board.level-4-grid { grid-template-columns: repeat(2, 1fr); max-width: 86px; }
+            .game-board.level-5-grid { grid-template-columns: repeat(3, 1fr); max-width: 138px; } /* ★レベル5追加 */
+
             .card { max-width: 40px; border-radius: 6px; }
             .card-front { width: calc(100% - 6px); height: calc(100% - 6px); border-radius: 4px; }
             .card-back::before { font-size: 1.5em; }
@@ -475,21 +483,28 @@
         // ドレミファソラシドの周波数 (Hz)
         const frequencies = {
             'ド': 261.63, // C4
+            'ド#': 277.18, // C#4
             'レ': 293.66, // D4
+            'レ#': 311.13, // D#4
             'ミ': 329.63, // E4
             'ファ': 349.23, // F4
+            'ファ#': 369.99, // F#4
             'ソ': 392.00, // G4
+            'ソ#': 415.30, // G#4
             'ラ': 440.00, // A4
+            'ラ#': 466.16, // A#4
             'シ': 493.88, // B4
             '高ド': 523.25 // C5
         };
-        const allNoteNames = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', '高ド'];
+        const chromaticScaleNames = ['ド', 'ド#', 'レ', 'レ#', 'ミ', 'ファ', 'ファ#', 'ソ', 'ソ#', 'ラ', 'ラ#', 'シ', '高ド']; // ★黒鍵を含む13音
+
         // 各レベルの設定
         const levels = [
             { id: 1, name: 'ドだけ', notes: ['ド'], pairs: 1, gridClass: 'level-1-grid' },
             { id: 2, name: 'ドレミ', notes: ['ド', 'レ', 'ミ'], pairs: 3, gridClass: 'level-2-grid' },
             { id: 3, name: 'ドレミファソ', notes: ['ド', 'レ', 'ミ', 'ファ', 'ソ'], pairs: 5, gridClass: 'level-3-grid' },
-            { id: 4, name: 'ドレミファソラシド', notes: allNoteNames, pairs: 8, gridClass: 'level-4-grid' }
+            { id: 4, name: 'ドレミファソラシド', notes: ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', '高ド'], pairs: 8, gridClass: 'level-4-grid' },
+            { id: 5, name: '黒鍵と白鍵', notes: chromaticScaleNames, pairs: 13, gridClass: 'level-5-grid' } // ★レベル5を追加
         ];
 
         // 音を再生する関数
