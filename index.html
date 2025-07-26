@@ -425,26 +425,33 @@
 
         // AudioContextの確実な起動処理
         // ユーザーが最初にドキュメントをタップ/クリックしたときにAudioContextを再開する
-        function resumeAudioContextIfNeeded() {
+        async function resumeAudioContextIfNeeded() { // async関数に変更
             // AudioContextがsuspended状態かinterrupted状態であればresumeを試みる
             if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
-                audioContext.resume().then(() => {
+                try {
+                    await audioContext.resume(); // awaitで完了を待つ
                     console.log('AudioContext resumed successfully. State:', audioContext.state);
-                }).catch(error => {
+                } catch (error) {
                     console.error('Failed to resume AudioContext:', error);
-                });
+                }
             } else if (audioContext.state === 'closed') {
                 // AudioContextがclosedになっていたら作り直す
                 console.warn('AudioContext was closed, recreating it.');
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain.disconnect(); // 古いAudioContextとの接続を解除 (もしあれば)
                 masterGain.connect(audioContext.destination); // 新しいAudioContextにmasterGainを接続し直す
-                // 新しいAudioContextもsuspended状態になる可能性があるので、再度resumeを試みる
-                audioContext.resume().then(() => {
+                masterGain.gain.setValueAtTime(1, audioContext.currentTime); // 新しいコンテキストで音量をリセット
+                try {
+                    await audioContext.resume(); // 新しいAudioContextも再開を試みる
                     console.log('New AudioContext created and resumed successfully. State:', audioContext.state);
-                }).catch(error => {
+                } catch (error) {
                     console.error('Failed to resume new AudioContext:', error);
-                });
+                }
             }
+            // AudioContextの状態変化を監視 (デバッグ用) - これも新しいAudioContextに付け直す
+            audioContext.onstatechange = () => {
+                console.log('AudioContext State Changed:', audioContext.state);
+            };
         }
 
         // ページロード後にイベントリスナーを設定（これらは削除しない）
@@ -461,11 +468,6 @@
             console.log('Pageshow event. Attempting to resume AudioContext.');
             resumeAudioContextIfNeeded();
         });
-
-        // AudioContextの状態変化を監視 (デバッグ用)
-        audioContext.onstatechange = () => {
-            console.log('AudioContext State Changed:', audioContext.state);
-        };
 
 
         // ドレミファソラシドの周波数 (Hz)
@@ -488,9 +490,9 @@
             { id: 4, name: 'ドレミファソラシド', notes: allNoteNames, pairs: 8, gridClass: 'level-4-grid' }
         ];
 
-        // 音を再生する関数（エンベロープ改善）
-        function playNote(noteName, duration = 0.5) {
-            resumeAudioContextIfNeeded(); // 再生前に必ずAudioContextの状態を確認
+        // 音を再生する関数
+        async function playNote(noteName, duration = 0.5) { // async関数に変更
+            await resumeAudioContextIfNeeded(); // ★再生前にAudioContextがrunningになるのを待つ
 
             const frequency = frequencies[noteName];
             if (!frequency) return 0; // 周波数がなければ0を返す
@@ -509,7 +511,7 @@
             gainNode.gain.setValueAtTime(0, t1); // 停止時に音量ゼロにピン留め
             
             oscillator.connect(gainNode);
-            gainNode.connect(masterGain); // ← masterGainに接続
+            gainNode.connect(masterGain); // masterGainに接続
             
             oscillator.start(t0);
             oscillator.stop(t1);
@@ -527,8 +529,8 @@
         }
 
         // 置き換え：完全スケジューリングのファンファーレ
-        function playFanfareAsync() {
-            resumeAudioContextIfNeeded();
+        async function playFanfareAsync() { // async関数に変更
+            await resumeAudioContextIfNeeded(); // ★再生前にAudioContextがrunningになるのを待つ
 
             const seq = [
                 { note: 'ド', dur: 0.2, type: 'triangle' },
@@ -560,8 +562,8 @@
         }
 
         // 置き換え：グランドファンファーレ（和音＋補助フレーズもAudio時間で予約）
-        function playGrandFanfareAsync() {
-            resumeAudioContextIfNeeded();
+        async function playGrandFanfareAsync() { // async関数に変更
+            await resumeAudioContextIfNeeded(); // ★再生前にAudioContextがrunningになるのを待つ
 
             const now = audioContext.currentTime;
             let maxScheduledTime = now; // スケジュールされた最も遅い音の終了時刻
@@ -587,8 +589,8 @@
             playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now, 0.5);
             playChord([frequencies['ソ'], frequencies['シ'], frequencies['レ']], now + 0.5, 0.5);
             playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now + 1.0, 1.0);
-
-            // 補助フレーズもAudio時間で予約（0.4秒）
+            
+            // 補助フレーズ（Audio時間で予約）
             const fragStart = now + 1.0; // 1.0秒地点から
             ['ド','高ド','ソ','ド'].forEach((n, i) => {
                 const start = fragStart + i * 0.10; // 100ms間隔
@@ -756,8 +758,8 @@
             if (lockBoard) return;
             if (this === firstCard) return;
             
-            // AudioContextがsuspended/closedになってたらここで再開を試みる
-            resumeAudioContextIfNeeded(); 
+            // ここでAudioContextがrunningになるまで待つ必要はない (playNote内でawaitするから)
+            // resumeAudioContextIfNeeded(); はグローバルのリスナーとplayNote内で十分
             
             if (!timerStarted) {
                 startTimer();
@@ -765,7 +767,7 @@
                 messageDisplay.textContent = `レベル${levels[currentLevelIndex].id}をプレイ中！`;
             }
             this.classList.add('flipped');
-            playNote(this.dataset.note);
+            playNote(this.dataset.note); // playNoteはasyncなので、内部でAudioContextの準備を待つ
             if (!hasFlippedCard) {
                 hasFlippedCard = true;
                 firstCard = this;
@@ -806,7 +808,7 @@
                 isTransitioning = true;
                 lockBoard = true;
 
-                // ① 音をまずスケジュールしてPromiseを得る
+                // ① 音をまずスケジュールし、完了Promiseを取得
                 const fanfarePromise = (currentLevelIndex === levels.length - 1)
                     ? playGrandFanfareAsync()
                     : playFanfareAsync();
@@ -826,9 +828,11 @@
                     `おめでとう！レベル${currentLevelId}を ${finalTime.toFixed(2)} 秒でクリアしたよ！\n名前を教えてね:`,
                     "ななしさん"
                 );
-                if (!playerName || !playerName.trim()) playerName = "ななしさん";
-                else playerName = playerName.trim().substring(0, 10);
-
+                if (playerName === null || playerName.trim() === "") {
+                    playerName = "ななしさん";
+                } else {
+                    playerName = playerName.trim().substring(0, 10);
+                }
                 saveRanking(currentLevelId, finalTime, playerName);
                 displayRanking(currentLevelId); // 軽量化されたランキング表示
 
