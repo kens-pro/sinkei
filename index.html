@@ -12,7 +12,7 @@
   gtag('config', 'G-9NZQDFD7DW');
 </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎵 音当て神経衰弱 - レベルモード 🎵</title>
+    <title>🎵 絶対音感ゲーム（神経衰弱版）🎵</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
     <style>
         /* (CSSは変更ありません) */
@@ -395,7 +395,7 @@
     </style>
 </head>
 <body>
-    <h1>🎵 音当て神経衰弱 - レベルモード 🎵</h1>
+    <h1>🎵 絶対音感ゲーム（神経衰弱版）🎵</h1>
     <div class="game-board-container">
         <div class="game-board" id="gameBoard"></div>
     </div>
@@ -712,7 +712,7 @@
             totalPairs = currentLevelConfig.pairs;
             matchedPairs = 0;
             remainingPairsDisplay.textContent = totalPairs;
-            messageDisplay.textContent = `レベル${currentLevelConfig.id} スタート！最初のカードをタップしてね`;
+            messageDisplay.innerHTML = '<strong style="color:#e53e3e;">うえのおんぷボタンをタップしてね</strong>';
             timerDisplay.textContent = '0.00';
             clearInterval(timerIntervalId);
             timerStarted = false;
