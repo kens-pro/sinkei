@@ -415,8 +415,15 @@
     <script>
         // Web Audio APIの初期化 (global scope)
         let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // === master output gain (全音をここに通す) ===
+        const masterGain = audioContext.createGain();
+        masterGain.gain.value = 1;
+        masterGain.connect(audioContext.destination);
 
-        // ★AudioContextの確実な起動処理★
+        // iOS遷移ロック
+        let isTransitioning = false;
+
+        // AudioContextの確実な起動処理
         // ユーザーが最初にドキュメントをタップ/クリックしたときにAudioContextを再開する
         function resumeAudioContextIfNeeded() {
             // AudioContextがsuspended状態かinterrupted状態であればresumeを試みる
@@ -430,6 +437,7 @@
                 // AudioContextがclosedになっていたら作り直す
                 console.warn('AudioContext was closed, recreating it.');
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain.connect(audioContext.destination); // 新しいAudioContextにmasterGainを接続し直す
                 // 新しいAudioContextもsuspended状態になる可能性があるので、再度resumeを試みる
                 audioContext.resume().then(() => {
                     console.log('New AudioContext created and resumed successfully. State:', audioContext.state);
@@ -501,7 +509,7 @@
             gainNode.gain.setValueAtTime(0, t1); // 停止時に音量ゼロにピン留め
             
             oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            gainNode.connect(masterGain); // ← masterGainに接続
             
             oscillator.start(t0);
             oscillator.stop(t1);
@@ -510,7 +518,7 @@
             oscillator.onended = () => {
                 try {
                     oscillator.disconnect(gainNode);
-                    gainNode.disconnect(audioContext.destination);
+                    gainNode.disconnect(masterGain); // masterGainからの切断も忘れずに
                 } catch (e) {
                     console.error("Error disconnecting audio nodes:", e);
                 }
@@ -518,112 +526,103 @@
             return duration; // 再生時間を返す
         }
 
-        // 通常のファンファーレを再生する関数
-        function playFanfare() {
-            resumeAudioContextIfNeeded(); // 再生前に必ずAudioContextの状態を確認
+        // 置き換え：完全スケジューリングのファンファーレ
+        function playFanfareAsync() {
+            resumeAudioContextIfNeeded();
 
-            const fanfareNotes = [
-                { note: 'ド', dur: 0.2 },
-                { note: 'ミ', dur: 0.2 },
-                { note: 'ソ', dur: 0.2 },
-                { note: '高ド', dur: 0.4 }
+            const seq = [
+                { note: 'ド', dur: 0.2, type: 'triangle' },
+                { note: 'ミ', dur: 0.2, type: 'triangle' },
+                { note: 'ソ', dur: 0.2, type: 'triangle' },
+                { note: '高ド', dur: 0.4, type: 'triangle' }
             ];
-            let startTime = audioContext.currentTime;
-            let totalDuration = 0; // 総再生時間
 
-            fanfareNotes.forEach(fNote => {
-                const frequency = frequencies[fNote.note];
-                if (!frequency) return;
-                const oscillator = audioContext.createOscillator();
-                oscillator.type = 'triangle';
-                oscillator.frequency.setValueAtTime(frequency, startTime);
-                const gainNode = audioContext.createGain();
-
-                const t0 = startTime;
-                const t1 = t0 + fNote.dur;
-
-                gainNode.gain.setValueAtTime(0, t0);
-                gainNode.gain.linearRampToValueAtTime(0.7, t0 + 0.05);
-                gainNode.gain.linearRampToValueAtTime(0.0001, t1 - 0.02);
-                gainNode.gain.setValueAtTime(0, t1);
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.start(t0);
-                oscillator.stop(t1);
-
-                oscillator.onended = () => {
-                    try {
-                        oscillator.disconnect(gainNode);
-                        gainNode.disconnect(audioContext.destination);
-                    } catch (e) {
-                        console.error("Error disconnecting audio nodes:", e);
-                    }
-                };
-                startTime += fNote.dur;
-                totalDuration += fNote.dur;
+            let t = audioContext.currentTime;
+            seq.forEach(s => {
+                const o = audioContext.createOscillator();
+                o.type = s.type;
+                o.frequency.setValueAtTime(frequencies[s.note], t);
+                const g = audioContext.createGain();
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.7, t + 0.05);
+                g.gain.linearRampToValueAtTime(0.0001, t + s.dur - 0.02);
+                g.gain.setValueAtTime(0, t + s.dur);
+                o.connect(g); g.connect(masterGain); // masterGainに接続
+                o.start(t); o.stop(t + s.dur);
+                o.onended = () => { try { o.disconnect(g); g.disconnect(masterGain); } catch {} };
+                t += s.dur;
             });
-            return totalDuration; // 総再生時間を返す
+
+            const end = t;
+            // 実際にPromiseを解決するまでの時間 (AudioContextの時間+余白)
+            const waitMs = Math.max(0, (end - audioContext.currentTime) * 1000 + 20);
+            return new Promise(res => setTimeout(res, waitMs));
         }
 
-        // グランドファンファーレを再生する関数
-        function playGrandFanfare() {
-            resumeAudioContextIfNeeded(); // 再生前に必ずAudioContextの状態を確認
+        // 置き換え：グランドファンファーレ（和音＋補助フレーズもAudio時間で予約）
+        function playGrandFanfareAsync() {
+            resumeAudioContextIfNeeded();
 
             const now = audioContext.currentTime;
-            let maxDuration = 0; // 最大再生時間
+            let maxScheduledTime = now; // スケジュールされた最も遅い音の終了時刻
 
-            function playChord(chordFrequencies, startTime, duration, masterGainValue = 0.8, type = 'sawtooth') {
-                chordFrequencies.forEach(freq => {
-                    const oscillator = audioContext.createOscillator();
-                    oscillator.type = type;
-                    oscillator.frequency.setValueAtTime(freq, startTime);
-                    const gainNode = audioContext.createGain();
-
-                    const t0 = startTime;
-                    const t1 = t0 + duration;
-
-                    gainNode.gain.setValueAtTime(0, t0);
-                    gainNode.gain.linearRampToValueAtTime(masterGainValue, t0 + 0.05);
-                    gainNode.gain.linearRampToValueAtTime(0.0001, t1 - 0.02);
-                    gainNode.gain.setValueAtTime(0, t1);
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.start(t0);
-                    oscillator.stop(t1);
-
-                    oscillator.onended = () => {
-                        try {
-                            oscillator.disconnect(gainNode);
-                            gainNode.disconnect(audioContext.destination);
-                        } catch (e) {
-                            console.error("Error disconnecting audio nodes:", e);
-                        }
-                    };
+            const playChord = (freqs, start, dur, level=0.9, type='sawtooth') => {
+                freqs.forEach(f => {
+                    const o = audioContext.createOscillator();
+                    o.type = type;
+                    o.frequency.setValueAtTime(f, start);
+                    const g = audioContext.createGain();
+                    g.gain.setValueAtTime(0, start);
+                    g.gain.linearRampToValueAtTime(level, start + 0.05);
+                    g.gain.linearRampToValueAtTime(0.0001, start + dur - 0.02);
+                    g.gain.setValueAtTime(0, start + dur);
+                    o.connect(g); g.connect(masterGain); // masterGainに接続
+                    o.start(start); o.stop(start + dur);
+                    o.onended = () => { try { o.disconnect(g); g.disconnect(masterGain); } catch {} };
                 });
-                maxDuration = Math.max(maxDuration, duration + (startTime - now)); // 相対的な終了時刻を計算
-            }
+                maxScheduledTime = Math.max(maxScheduledTime, start + dur);
+            };
 
-            // グランドファンファーレのシーケンス
-            playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now, 0.5, 0.9, 'sawtooth');
-            playChord([frequencies['ソ'], frequencies['シ'], frequencies['レ']], now + 0.5, 0.5, 0.9, 'sawtooth');
-            playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now + 1.0, 1.0, 1.0, 'sawtooth');
-            
-            // 補助フレーズ（約0.4秒）
-            setTimeout(() => {
-                let arpeggioDelay = 0;
-                ['ド','高ド','ソ','ド'].forEach((n,i)=>{
-                    setTimeout(()=>playNote(n,0.15), arpeggioDelay);
-                    arpeggioDelay += 100; // 0.1秒間隔で次の音
-                });
-            }, 1000); // 1秒後くらいに開始
+            // コード進行（合計2.0秒）
+            playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now, 0.5);
+            playChord([frequencies['ソ'], frequencies['シ'], frequencies['レ']], now + 0.5, 0.5);
+            playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now + 1.0, 1.0);
 
-            // グランドファンファーレの総尺をざっくり計算して返す
-            return Math.max(maxDuration, 1.0 + 0.4); // メインコード2.0秒 + アルペジオの最大値
+            // 補助フレーズもAudio時間で予約（0.4秒）
+            const fragStart = now + 1.0; // 1.0秒地点から
+            ['ド','高ド','ソ','ド'].forEach((n, i) => {
+                const start = fragStart + i * 0.10; // 100ms間隔
+                const o = audioContext.createOscillator();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(frequencies[n], start);
+                const g = audioContext.createGain();
+                g.gain.setValueAtTime(0, start);
+                g.gain.linearRampToValueAtTime(0.5, start + 0.03);
+                g.gain.linearRampToValueAtTime(0.0001, start + 0.15 - 0.02);
+                g.gain.setValueAtTime(0, start + 0.15);
+                o.connect(g); g.connect(masterGain); // masterGainに接続
+                o.start(start); o.stop(start + 0.15);
+                o.onended = () => { try { o.disconnect(g); g.disconnect(masterGain); } catch {} };
+                maxScheduledTime = Math.max(maxScheduledTime, start + 0.15);
+            });
+
+            // 全ての音が鳴り終わる時刻を基にPromiseを返す
+            const waitMs = Math.max(0, (maxScheduledTime - audioContext.currentTime) * 1000 + 20);
+            return new Promise(res => setTimeout(res, waitMs));
         }
+
+        // 全体フェード（非常停止用・短時間）
+        function fadeOutAllAudio(ms = 120) {
+            const t = audioContext.currentTime;
+            masterGain.gain.cancelScheduledValues(t); // 現在スケジュールされている音量変化をキャンセル
+            masterGain.gain.setValueAtTime(masterGain.gain.value, t); // 現在の音量から開始
+            masterGain.gain.linearRampToValueAtTime(0.0001, t + ms / 1000); // ms秒かけてほぼ無音に
+            setTimeout(() => {
+                const t2 = audioContext.currentTime;
+                masterGain.gain.setValueAtTime(1, t2); // フェードアウト後、音量を元に戻す
+            }, ms + 20); // ms + 20ms後に音量を戻す（AudioContextの内部処理とJavaScriptのタイマーのズレを考慮）
+        }
+
 
         // ゲームの状態変数
         const gameBoard = document.getElementById('gameBoard');
@@ -719,7 +718,7 @@
             // gameBoardのDOM更新を requestAnimationFrame でバッチ処理
             gameBoard.className = 'game-board ' + currentLevelConfig.gridClass; // クラスは先に適用
             
-            // 古いカードを削除
+            // 古いカードを削除 (replaceChildrenは比較的新しいので、子をループで削除する頑健な方法)
             while(gameBoard.firstChild) {
                 gameBoard.removeChild(gameBoard.firstChild);
             }
@@ -748,12 +747,15 @@
             });
             
             resetBoard();
+            isTransitioning = false; // ★レベル初期化完了でロック解除★
             displayRanking(currentLevelConfig.id);
         }
         // カードめくり
         function flipCard() {
+            if (isTransitioning) return; // ★遷移中は入力無効
             if (lockBoard) return;
             if (this === firstCard) return;
+            
             // AudioContextがsuspended/closedになってたらここで再開を試みる
             resumeAudioContextIfNeeded(); 
             
@@ -786,7 +788,7 @@
             }
         }
         // マッチ時処理
-        function disableCards() {
+        async function disableCards() { // ★async関数に変更
             firstCard.removeEventListener('click', flipCard);
             secondCard.removeEventListener('click', flipCard);
             firstCard.classList.add('matched');
@@ -800,38 +802,47 @@
                 const finalTime = stopTimer();
                 const currentLevelId = levels[currentLevelIndex].id;
 
-                // ① 音の再生を最優先でスケジュール
-                const fanfareSec = (currentLevelIndex === levels.length - 1)
-                    ? playGrandFanfare() // 最終レベルならグランドファンファーレ
-                    : playFanfare();     // それ以外なら通常のファンファーレ
+                // ★遷移ロックで入力停止
+                isTransitioning = true;
+                lockBoard = true;
 
-                // ② 軽いUIの更新と紙吹雪の開始
+                // ① 音をまずスケジュールしてPromiseを得る
+                const fanfarePromise = (currentLevelIndex === levels.length - 1)
+                    ? playGrandFanfareAsync()
+                    : playFanfareAsync();
+
+                // ② 軽いUIは先に
                 messageDisplay.textContent = `レベル${currentLevelId} クリア！おめでとう！`;
-                launchConfetti(); 
+                launchConfetti();
 
-                // ③ ブロッキングするprompt()や重いDOM更新を少し遅れて実行
-                setTimeout(() => {
-                    let playerName = prompt(`おめでとう！レベル${currentLevelId}を ${finalTime.toFixed(2)} 秒でクリアしたよ！\n名前を教えてね:`, "ななしさん");
-                    if (playerName === null || playerName.trim() === "") {
-                        playerName = "ななしさん";
-                    } else {
-                        playerName = playerName.trim().substring(0, 10);
-                    }
-                    saveRanking(currentLevelId, finalTime, playerName);
-                    displayRanking(currentLevelId); // 軽量化されたランキング表示
+                // ③ ファンファーレが完全に終わるのを待つ（iOS対策の肝）
+                await fanfarePromise;
 
-                    // 次のレベルへの遷移
-                    currentLevelIndex++;
-                    if (currentLevelIndex < levels.length) {
-                        setTimeout(() => {
-                            messageDisplay.textContent = `次のレベル${levels[currentLevelIndex].id}へ！`;
-                            initializeGame(); // 次のレベルを開始
-                        }, Math.max(300, (fanfareSec * 1000) - 200)); // ファンファーレが終わる少し前に開始するように調整
-                    } else {
-                        messageDisplay.textContent = '全レベルクリア！素晴らしい！';
-                        currentLevelIndex = 0; // 全レベルクリアしたらレベル1に戻る準備
-                    }
-                }, 150); // ファンファーレが鳴り始めてから150ms後にプロンプトなどを表示
+                // 念のため：残音防止の非常停止（短いフェード）
+                fadeOutAllAudio(100);
+
+                // ④ ここからブロッキングな処理（promptなど）
+                let playerName = prompt(
+                    `おめでとう！レベル${currentLevelId}を ${finalTime.toFixed(2)} 秒でクリアしたよ！\n名前を教えてね:`,
+                    "ななしさん"
+                );
+                if (!playerName || !playerName.trim()) playerName = "ななしさん";
+                else playerName = playerName.trim().substring(0, 10);
+
+                saveRanking(currentLevelId, finalTime, playerName);
+                displayRanking(currentLevelId); // 軽量化されたランキング表示
+
+                // 次のレベルへの遷移
+                currentLevelIndex++;
+                if (currentLevelIndex < levels.length) {
+                    messageDisplay.textContent = `次のレベル${levels[currentLevelIndex].id}へ！`;
+                    initializeGame();             // 初期化
+                    // isTransitioning の解除は initializeGame() の最後で行われる
+                } else {
+                    messageDisplay.textContent = '全レベルクリア！素晴らしい！';
+                    currentLevelIndex = 0;
+                    isTransitioning = false; // 全レベルクリア時も解除
+                }
             }
         }
         // マッチしない場合
@@ -877,6 +888,7 @@
         }
         // リセットボタン
         resetButton.addEventListener('click', () => {
+            fadeOutAllAudio(120); // ★リセット時に念のため音をフェードアウト
             currentLevelIndex = 0;
             initializeGame();
         });
