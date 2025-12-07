@@ -11,633 +11,462 @@
 
   gtag('config', 'G-9NZQDFD7DW');
 </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎵 絶対音感ゲーム（神経衰弱版）🎵</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎵 おとあてメモリー！ 🎵</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap" rel="stylesheet">
     <style>
-        /* (CSSを一部修正) */
-        /* リセットと基本スタイル */
+        /* テーマカラー定義 */
+        :root {
+            --bg-gradient-1: #ff9a9e;
+            --bg-gradient-2: #fecfef;
+            --bg-gradient-3: #a18cd1;
+            
+            --card-back-1: #ff9ff3;
+            --card-back-2: #feca57;
+            
+            --card-front-bg: #ffffff;
+            --text-color: #5f27cd;
+            --accent-color: #ff6b81;
+            
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.9);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
+
         body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: linear-gradient(135deg, #e0f7fa, #fce4ec);
+            font-family: 'Mochiy Pop One', sans-serif;
+            background: linear-gradient(-45deg, var(--bg-gradient-1), var(--bg-gradient-2), var(--bg-gradient-2), var(--bg-gradient-3));
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
             user-select: none;
-            color: #2d3748;
+            color: #333;
+            background-image: 
+                radial-gradient(white 15%, transparent 16%),
+                radial-gradient(white 15%, transparent 16%);
+            background-position: 0 0, 30px 30px;
+            background-size: 60px 60px;
+            background-blend-mode: overlay;
         }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         h1 {
-            font-family: 'Poppins', sans-serif;
-            font-size: 2.5em;
-            color: #2b6cb0;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            animation: fadeIn 1s ease-out;
+            font-size: 1.8em;
+            color: #fff;
+            text-shadow: 2px 2px 0 var(--text-color), 4px 4px 0 rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            text-align: center;
+            letter-spacing: 0.05em;
+            animation: floatText 3s ease-in-out infinite;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        @keyframes floatText {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
         }
+
         /* ゲームボードコンテナ */
         .game-board-container {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            max-width: 700px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 30px;
+            padding: 20px;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.15),
+                inset 0 0 0 4px var(--glass-border);
+            max-width: 600px;
             width: 100%;
             display: flex;
             justify-content: center;
             position: relative;
-            overflow: hidden;
+            margin-bottom: 15px;
         }
-        .game-board-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.3), transparent);
-            opacity: 0.5;
-        }
+
         .game-board {
             display: grid;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
-            padding: 10px;
+            justify-content: center;
             position: relative;
-            z-index: 1;
         }
-        /* レベルごとのグリッド設定（PC/タブレット向け） */
-        /* カード1枚の幅を約70px、隙間12pxとして計算 */
-        .game-board.level-1-grid { grid-template-columns: repeat(2, 1fr); max-width: 152px; }
-        .game-board.level-2-grid { grid-template-columns: repeat(3, 1fr); max-width: 234px; }
-        .game-board.level-3-grid { grid-template-columns: repeat(4, 1fr); max-width: 316px; }
-        .game-board.level-4-grid { grid-template-columns: repeat(4, 1fr); max-width: 316px; }
-        .game-board.level-5-grid { grid-template-columns: repeat(5, 1fr); max-width: 398px; } /* ★レベル5追加 (70*5 + 12*4) */
-        
-        /* カードデザイン（ガラスモーフィズム） */
+
+        /* グリッドレイアウト調整 */
+        .game-board.level-1-grid { grid-template-columns: repeat(2, 1fr); max-width: 160px; }
+        .game-board.level-2-grid { grid-template-columns: repeat(3, 1fr); max-width: 240px; }
+        .game-board.level-3-grid { grid-template-columns: repeat(4, 1fr); max-width: 320px; }
+        .game-board.level-4-grid { grid-template-columns: repeat(4, 1fr); max-width: 320px; }
+        .game-board.level-5-grid { grid-template-columns: repeat(5, 1fr); max-width: 400px; }
+
+        /* カードデザイン */
         .card {
             width: 100%;
-            aspect-ratio: 2 / 3;
+            aspect-ratio: 1 / 1.2;
             position: relative;
-            border-radius: 15px;
             cursor: pointer;
             perspective: 1000px;
-            transition: transform 0.6s ease, box-shadow 0.3s ease;
+            max-width: 75px;
+            justify-self: center;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 2.5, 0.6, 0.8);
             transform-style: preserve-3d;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            max-width: 70px;
+            border-radius: 15px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
         }
-        .card:hover {
-            box-shadow: 0 0 15px rgba(66, 153, 225, 0.5);
-            transform: scale(1.05);
-        }
-        .card.flipped {
+
+        .card.flipped .card-inner {
             transform: rotateY(180deg);
         }
+        
         .card.matched {
-            opacity: 0.85;
-            cursor: default;
             pointer-events: none;
-            background: rgba(129, 230, 217, 0.3);
+            animation: popMatched 0.5s forwards;
         }
-        .card-inner {
+        .card.matched .card-inner {
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+        @keyframes popMatched {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        .card-front, .card-back {
             position: absolute;
             width: 100%;
             height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             backface-visibility: hidden;
-            border-radius: 14px;
-            overflow: hidden;
-        }
-        .card-front {
-            background: linear-gradient(135deg, #e6fffa, #bee3f8);
-            transform: rotateY(180deg);
-            font-size: 1.4em;
-            color: #2b6cb0;
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: calc(100% - 12px);
-            height: calc(100% - 12px);
-            transform: translate(-50%, -50%) rotateY(180deg);
-            border-radius: 12px;
-            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
-        }
-        .card.matched .card-front {
-            display: flex;
-        }
-        .card-back {
-            background: linear-gradient(135deg, #90cdf4, #ed64a6);
             display: flex;
             justify-content: center;
             align-items: center;
+            border-radius: 15px;
+            border: 3px solid #fff;
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, var(--card-back-1), var(--card-back-2));
         }
         .card-back::before {
             content: '🎵';
-            font-size: 2.5em;
+            font-size: 2em;
             color: #fff;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            animation: pulse 2s infinite;
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.2));
+            animation: pulseIcon 2s infinite;
         }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        @keyframes pulseIcon {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
         }
+
+        .card-front {
+            background: var(--card-front-bg);
+            color: var(--text-color);
+            transform: rotateY(180deg);
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        /* チュートリアル用の指アイコンと強調アニメーション */
+        .tutorial-pointer {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            z-index: 100;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
+            animation: tapGesture 1.5s infinite;
+        }
+
+        @keyframes tapGesture {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-5px, 5px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        .card.tutorial-target {
+            animation: wiggleCard 1.5s infinite;
+            z-index: 10;
+        }
+        .card.tutorial-target .card-inner {
+            box-shadow: 0 0 15px #feca57;
+            border: 2px solid #fff;
+        }
+
+        @keyframes wiggleCard {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+
         /* 情報パネル */
         .info-panel {
-            margin-top: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(5px);
-            border-radius: 10px;
-            padding: 15px 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background: #fff;
+            border-radius: 20px;
+            padding: 15px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.05);
             text-align: center;
-            animation: slideIn 0.5s ease-out;
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            margin-bottom: 15px;
+            border: 4px solid #f0f0f0;
         }
         .info-panel p {
-            margin: 8px 0;
-            font-size: 1.1em;
+            margin: 5px 0;
+            font-size: 1rem;
+            color: #555;
         }
-        #timerDisplay {
-            color: #e53e3e;
+        #message {
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            min-height: 1.5em;
+        }
+        #timerDisplay, #currentLevelDisplay, #remainingPairs {
+            color: #a29bfe;
             font-weight: bold;
-            font-size: 1.3em;
+            font-size: 1.2rem;
         }
-        #currentLevelDisplay {
-            color: #38b2ac;
-            font-weight: bold;
-            font-size: 1.3em;
-        }
-        /* ボタンコンテナ */
+
+        /* ボタン */
         .button-container {
-            margin: 20px 0;
             width: 100%;
-            max-width: 600px;
+            max-width: 400px;
             display: flex;
             justify-content: center;
-            gap: 4px;
+            margin-bottom: 20px;
         }
         button {
-            padding: 20px 40px;
-            width: 100%;
-            max-width: 550px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 1.8em;
-            background: linear-gradient(135deg, #38b2ac, #4299e1);
+            padding: 15px 30px;
+            font-family: 'Mochiy Pop One', sans-serif;
+            font-size: 1.3em;
+            background: linear-gradient(to bottom, #7bed9f, #2ed573);
             color: #fff;
-            border: none;
-            border-radius: 60px;
+            border: 4px solid #fff;
+            border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        button:hover {
-            background: linear-gradient(135deg, #2c7a7b, #2b6cb0);
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            box-shadow: 0 6px 0 #218c74, 0 10px 10px rgba(0,0,0,0.1);
+            transition: all 0.1s;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
         }
         button:active {
-            transform: translateY(0);
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #218c74, inset 0 2px 5px rgba(0,0,0,0.2);
         }
-        /* ランキングセクション */
+
+        /* ランキング */
         .ranking-section {
-            margin-top: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
             padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 0px 20px rgba(0, 0, 0, 0.15);
-            max-width: 400px;
             width: 100%;
-            text-align: center;
-            overflow-x: auto;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         .ranking-section h2 {
-            font-family: 'Poppins', sans-serif;
-            color:#2b6cb0;
-            margin-bottom:15px;
-            font-size:1.6em;
+            color: #fd79a8;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            text-align: center;
         }
         #rankingTable {
-            width:100%;
-            border-collapse:collapse;
-            font-size:1em;
-            margin: 0 auto;
-            min-width: 250px;
-        }
-        #rankingTable th,
-        #rankingTable td {
-            padding:10px;
-            text-align:left;
-            border-bottom:1px solid #e2e8f0;
+            width: 100%;
+            border-collapse: collapse;
         }
         #rankingTable th {
-            color:#4a5568;
-            font-weight:600;
+            color: #636e72;
+            padding: 8px;
+            border-bottom: 2px solid #dfe6e9;
         }
-        #rankingTable td.rank-time {
-            color:#e53e3e;
-            font-weight:700;
-            text-align: right;
+        #rankingTable td {
+            padding: 10px;
+            border-bottom: 1px solid #dfe6e9;
+            color: #2d3436;
         }
-        #rankingTable tr:hover {
-            background:rgba(203,213,225,0.3);
-            cursor:default;
-        }
-        /* 紙吹雪アニメーション */
+        #rankingTable tr:nth-child(1) td { color: #d63031; font-weight: bold; }
+        .rank-time { text-align: right; }
+
         .confetti-container {
             position: fixed;
-            top:0;
-            left:0;
-            width:100%;
-            height:100%;
-            pointer-events:none;
-            z-index:1000;
-            overflow: hidden;
-            /* パフォーマンス改善：描画内容を隔離 */
-            contain: layout paint; 
+            top:0; left:0; width:100%; height:100%;
+            pointer-events:none; z-index:9999;
         }
-        .confetti {
-            position: absolute;
-            width:12px;
-            height:12px;
-            opacity:0;
-            animation: fall 4s ease-out forwards, sway 2s ease-in-out alternate infinite;
-            transform-origin: center center;
-            /* パフォーマンス改善：描画エンジンに変化を通知 */
-            will-change: transform, opacity; 
-        }
-        @keyframes fall {
-            0% { transform: translateY(-100vh) rotateZ(0deg); opacity: 0; }
-            20% { opacity: 1; }
-            100% { transform: translateY(100vh) rotateZ(1080deg); opacity: 0; }
-        }
-        @keyframes sway {
-            0% { transform: translateX(-10px); }
-            100% { transform: translateX(10px); }
-        }
-        .confetti:nth-child(1n) { background: #ed64a6; }
-        .confetti:nth-child(2n) { background: #38b2ac; }
-        .confetti:nth-child(3n) { background: #f6ad55; }
-        .confetti:nth-child(4n) { background: #4299e1; }
-        .confetti:nth-child(5n) { background: #f56565; }
-        /* レスポンシブデザイン */
-        @media (max-width: 768px) {
-            h1 { font-size: 2em; }
-            .game-board-container { padding: 15px; }
-            .game-board { gap: 10px; }
-            .game-board.level-1-grid { max-width: 130px; }
-            .game-board.level-2-grid { grid-template-columns: repeat(3, 1fr); max-width: 200px; }
-            .game-board.level-3-grid { grid-template-columns: repeat(3, 1fr); max-width: 200px; }
-            .game-board.level-4-grid { grid-template-columns: repeat(4, 1fr); max-width: 270px; }
-            .game-board.level-5-grid { grid-template-columns: repeat(4, 1fr); max-width: 270px; } /* ★レベル5追加 */
 
-            .card { max-width: 60px; border-radius: 10px; }
-            .card-front { width: calc(100% - 8px); height: calc(100% - 8px); border-radius: 8px; }
-            .card-back::before { font-size: 2.2em; }
-            .card.matched .card-front { font-size: 1.2em; }
-            .info-panel { padding: 10px 20px; font-size: 1em; }
-            .button-container {
-                max-width: calc(100% - 40px);
-                gap: 4px;
-            }
-            button {
-                padding: 18px 25px;
-                font-size: 1.5em;
-                max-width: 100%;
-                border-radius: 50px;
-            }
-            .ranking-section { max-width: 350px; padding: 15px; }
-            .ranking-section h2 { font-size: 1.4em; }
-        }
-        @media (max-width: 600px) {
-            h1 { font-size: 1.8em; margin-bottom: 15px; }
-            .game-board-container { 
-                padding: 10px;
-                /* パフォーマンス改善：backdrop-filterをオフ */
-                backdrop-filter: none;
-                background: rgba(255,255,255,0.85); 
-            }
-            .game-board { gap: 8px; }
-            .game-board.level-1-grid { max-width: 108px; }
-            .game-board.level-2-grid { grid-template-columns: repeat(3, 1fr); max-width: 166px; }
-            .game-board.level-3-grid { grid-template-columns: repeat(3, 1fr); max-width: 166px; }
-            .game-board.level-4-grid { grid-template-columns: repeat(3, 1fr); max-width: 166px; }
-            .game-board.level-5-grid { grid-template-columns: repeat(3, 1fr); max-width: 166px; } /* ★レベル5追加 */
-
-            .card { max-width: 50px; border-radius: 8px; }
-            .card-front { width: calc(100% - 6px); height: calc(100% - 6px); border-radius: 6px; }
-            .card-back::before { font-size: 1.8em; }
-            .card.matched .card-front { font-size: 0.9em; }
-            .info-panel { font-size: 0.9em; }
-            .button-container {
-                max-width: calc(100% - 30px);
-                gap: 4px;
-            }
-            button {
-                padding: 16px 20px;
-                font-size: 1.3em;
-                max-width: 100%;
-                border-radius: 40px;
-            }
-            .ranking-section { max-width: 300px; }
-        }
         @media (max-width: 400px) {
-            .game-board-container { padding: 8px; }
-            .game-board { gap: 6px; }
-            .game-board.level-1-grid { max-width: 86px; }
-            .game-board.level-2-grid { grid-template-columns: repeat(2, 1fr); max-width: 86px; }
-            .game-board.level-3-grid { grid-template-columns: repeat(2, 1fr); max-width: 86px; }
-            .game-board.level-4-grid { grid-template-columns: repeat(2, 1fr); max-width: 86px; }
-            .game-board.level-5-grid { grid-template-columns: repeat(3, 1fr); max-width: 138px; } /* ★レベル5追加 */
-
-            .card { max-width: 40px; border-radius: 6px; }
-            .card-front { width: calc(100% - 6px); height: calc(100% - 6px); border-radius: 4px; }
+            h1 { font-size: 1.5em; }
+            .game-board-container { padding: 15px; }
+            .card { max-width: 60px; }
             .card-back::before { font-size: 1.5em; }
-            .card.matched .card-front { font-size: 0.8em; }
-            .button-container {
-                max-width: calc(100% - 20px);
-                gap: 4px;
-            }
-            button {
-                padding: 14px 20px;
-                font-size: 1.1em;
-                max-width: 100%;
-                border-radius: 30px;
-            }
-            .ranking-section { max-width: 250px; }
-        }
-        /* 低スペック・モバイルでアニメーション最小化 */
-        @media (prefers-reduced-motion: reduce) {
-            * { 
-                animation: none !important; 
-                transition: none !important; 
-            }
-            .card:hover { transform: none !important; }
-            .button-container button:hover { transform: none !important; }
+            .game-board { gap: 8px; }
+            .game-board.level-3-grid { grid-template-columns: repeat(3, 1fr); max-width: 200px; } 
+            .game-board.level-4-grid { grid-template-columns: repeat(4, 1fr); max-width: 260px; }
+            .game-board.level-5-grid { grid-template-columns: repeat(4, 1fr); max-width: 260px; }
         }
     </style>
 </head>
 <body>
-    <h1>🎵 絶対音感ゲーム（神経衰弱版）🎵</h1>
+    <h1>🎵 おとあて<br>メモリー！ 🎵</h1>
+    
     <div class="game-board-container">
         <div class="game-board" id="gameBoard"></div>
     </div>
+
     <div class="info-panel">
-        <p>現在のレベル: <span id="currentLevelDisplay">1</span></p>
+        <p>レベル: <span id="currentLevelDisplay">1</span> / のこり: <span id="remainingPairs"></span> ペア</p>
         <p id="message"></p>
-        <p>残りペア数: <span id="remainingPairs"></span></p>
         <p>タイム: <span id="timerDisplay">0.00</span> 秒</p>
     </div>
+
     <div class="button-container">
-        <button id="resetButton">最初から遊ぶ</button>
+        <button id="resetButton">さいしょから！</button>
     </div>
+
     <div class="ranking-section">
-        <h2 id="rankingTitle">🏆 ランキング (レベル1) 🏆</h2>
+        <h2 id="rankingTitle">🏆 ランキング (Lv.1) 🏆</h2>
         <table id="rankingTable"></table>
     </div>
+
     <div id="confettiContainer" class="confetti-container"></div>
+
     <script>
         // Web Audio APIの初期化
         let audioContext;
         let masterGain;
 
-        // ★AudioContextとmasterGainをセットで再構築する関数
         function recreateAudioGraph() {
             const Ctx = window.AudioContext || window.webkitAudioContext;
             audioContext = new Ctx();
             masterGain = audioContext.createGain();
             masterGain.gain.value = 1;
             masterGain.connect(audioContext.destination);
-
-            // ★AudioContextの状態変化を監視 (再構築時に再設定)
-            audioContext.onstatechange = () => {
-                console.log('[Audio] state:', audioContext.state);
-            };
         }
 
-        recreateAudioGraph(); // ★初回読み込み時にもこの関数で初期化
+        recreateAudioGraph();
 
-        // ★AudioContextの確実な起動処理★
         async function resumeAudioContextIfNeeded() {
-            if (!audioContext) recreateAudioGraph(); // 万一audioContextがnullの場合も再構築
-
+            if (!audioContext) recreateAudioGraph();
             if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
-                try {
-                    await audioContext.resume();
-                    console.log('AudioContext resumed successfully. State:', audioContext.state);
-                } catch (error) {
-                    console.error('Failed to resume AudioContext:', error);
-                }
+                try { await audioContext.resume(); } catch (e) {}
             } else if (audioContext.state === 'closed') {
-                console.warn('AudioContext was closed, recreating whole audio graph.');
-                recreateAudioGraph(); // ★AudioContextとmasterGainを同時に作り直す
-                try {
-                    await audioContext.resume();
-                    console.log('New AudioContext created and resumed successfully. State:', audioContext.state);
-                } catch (error) {
-                    console.error('Failed to resume new AudioContext:', error);
-                }
+                recreateAudioGraph();
+                try { await audioContext.resume(); } catch (e) {}
             }
         }
 
-        // ページロード後にイベントリスナーを設定（これらは削除しない）
         document.addEventListener('pointerdown', resumeAudioContextIfNeeded, { passive: true });
-        document.addEventListener('touchstart', resumeAudioContextIfNeeded, { passive: true }); // iOS配慮
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                console.log('Visibility changed to visible. Attempting to resume AudioContext.');
-                resumeAudioContextIfNeeded();
-            }
-        });
-        window.addEventListener('pageshow', () => { // ブラウザの「戻る」ボタンなどでキャッシュから復帰した場合
-            console.log('Pageshow event. Attempting to resume AudioContext.');
-            resumeAudioContextIfNeeded();
-        });
+        document.addEventListener('touchstart', resumeAudioContextIfNeeded, { passive: true });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeAudioContextIfNeeded(); });
+        window.addEventListener('pageshow', () => { resumeAudioContextIfNeeded(); });
 
-
-        // ドレミファソラシドの周波数 (Hz)
+        // 周波数設定
         const frequencies = {
-            'ド': 261.63, // C4
-            'ド#': 277.18, // C#4
-            'レ': 293.66, // D4
-            'レ#': 311.13, // D#4
-            'ミ': 329.63, // E4
-            'ファ': 349.23, // F4
-            'ファ#': 369.99, // F#4
-            'ソ': 392.00, // G4
-            'ソ#': 415.30, // G#4
-            'ラ': 440.00, // A4
-            'ラ#': 466.16, // A#4
-            'シ': 493.88, // B4
-            '高ド': 523.25 // C5
+            'ド': 261.63, 'ド#': 277.18, 'レ': 293.66, 'レ#': 311.13,
+            'ミ': 329.63, 'ファ': 349.23, 'ファ#': 369.99, 'ソ': 392.00,
+            'ソ#': 415.30, 'ラ': 440.00, 'ラ#': 466.16, 'シ': 493.88, '高ド': 523.25
         };
-        const chromaticScaleNames = ['ド', 'ド#', 'レ', 'レ#', 'ミ', 'ファ', 'ファ#', 'ソ', 'ソ#', 'ラ', 'ラ#', 'シ', '高ド']; // ★黒鍵を含む13音
+        const chromaticScaleNames = ['ド', 'ド#', 'レ', 'レ#', 'ミ', 'ファ', 'ファ#', 'ソ', 'ソ#', 'ラ', 'ラ#', 'シ', '高ド'];
 
-        // 各レベルの設定
         const levels = [
             { id: 1, name: 'ドだけ', notes: ['ド'], pairs: 1, gridClass: 'level-1-grid' },
             { id: 2, name: 'ドレミ', notes: ['ド', 'レ', 'ミ'], pairs: 3, gridClass: 'level-2-grid' },
             { id: 3, name: 'ドレミファソ', notes: ['ド', 'レ', 'ミ', 'ファ', 'ソ'], pairs: 5, gridClass: 'level-3-grid' },
             { id: 4, name: 'ドレミファソラシド', notes: ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', '高ド'], pairs: 8, gridClass: 'level-4-grid' },
-            { id: 5, name: '黒鍵と白鍵', notes: chromaticScaleNames, pairs: 13, gridClass: 'level-5-grid' } // ★レベル5を追加
+            { id: 5, name: '黒鍵と白鍵', notes: chromaticScaleNames, pairs: 13, gridClass: 'level-5-grid' }
         ];
 
-        // 音を再生する関数
         async function playNote(noteName, duration = 0.5) {
             await resumeAudioContextIfNeeded();
-
             const frequency = frequencies[noteName];
             if (!frequency) return 0;
-
             const oscillator = audioContext.createOscillator();
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
             const gainNode = audioContext.createGain();
-
             const t0 = audioContext.currentTime;
             const t1 = t0 + duration;
-            
             gainNode.gain.setValueAtTime(0, t0);
             gainNode.gain.linearRampToValueAtTime(0.5, t0 + 0.05);
             gainNode.gain.linearRampToValueAtTime(0.0001, t1 - 0.02);
             gainNode.gain.setValueAtTime(0, t1);
-            
             oscillator.connect(gainNode);
             gainNode.connect(masterGain);
-            
             oscillator.start(t0);
             oscillator.stop(t1);
-
-            oscillator.onended = () => {
-                try {
-                    oscillator.disconnect(gainNode);
-                    gainNode.disconnect(masterGain);
-                } catch (e) {
-                    console.error("Error disconnecting audio nodes:", e);
-                }
-            };
+            oscillator.onended = () => { try { oscillator.disconnect(gainNode); gainNode.disconnect(masterGain); } catch (e) {} };
             return duration;
         }
 
-        // 置き換え：完全スケジューリングのファンファーレ
         async function playFanfareAsync() {
             await resumeAudioContextIfNeeded();
-
-            const seq = [
-                { note: 'ド', dur: 0.2, type: 'triangle' },
-                { note: 'ミ', dur: 0.2, type: 'triangle' },
-                { note: 'ソ', dur: 0.2, type: 'triangle' },
-                { note: '高ド', dur: 0.4, type: 'triangle' }
-            ];
-
+            const seq = [{note:'ド',dur:0.2},{note:'ミ',dur:0.2},{note:'ソ',dur:0.2},{note:'高ド',dur:0.4}];
             let t = audioContext.currentTime;
             seq.forEach(s => {
-                const o = audioContext.createOscillator();
-                o.type = s.type;
+                const o = audioContext.createOscillator(); o.type = 'triangle';
                 o.frequency.setValueAtTime(frequencies[s.note], t);
                 const g = audioContext.createGain();
                 g.gain.setValueAtTime(0, t);
                 g.gain.linearRampToValueAtTime(0.7, t + 0.05);
                 g.gain.linearRampToValueAtTime(0.0001, t + s.dur - 0.02);
-                g.gain.setValueAtTime(0, t + s.dur);
                 o.connect(g); g.connect(masterGain);
                 o.start(t); o.stop(t + s.dur);
-                o.onended = () => { try { o.disconnect(g); g.disconnect(masterGain); } catch {} };
                 t += s.dur;
             });
-
-            const end = t;
-            const waitMs = Math.max(0, (end - audioContext.currentTime) * 1000 + 20);
+            const waitMs = Math.max(0, (t - audioContext.currentTime) * 1000 + 20);
             return new Promise(res => setTimeout(res, waitMs));
         }
 
-        // 置き換え：グランドファンファーレ（和音＋補助フレーズもAudio時間で予約）
         async function playGrandFanfareAsync() {
             await resumeAudioContextIfNeeded();
-
             const now = audioContext.currentTime;
             let maxScheduledTime = now;
-
-            const playChord = (freqs, start, dur, level=0.9, type='sawtooth') => {
+            const playChord = (freqs, start, dur) => {
                 freqs.forEach(f => {
-                    const o = audioContext.createOscillator();
-                    o.type = type;
+                    const o = audioContext.createOscillator(); o.type = 'sawtooth';
                     o.frequency.setValueAtTime(f, start);
                     const g = audioContext.createGain();
                     g.gain.setValueAtTime(0, start);
-                    g.gain.linearRampToValueAtTime(level, start + 0.05);
+                    g.gain.linearRampToValueAtTime(0.9, start + 0.05);
                     g.gain.linearRampToValueAtTime(0.0001, start + dur - 0.02);
-                    g.gain.setValueAtTime(0, start + dur);
                     o.connect(g); g.connect(masterGain);
                     o.start(start); o.stop(start + dur);
-                    o.onended = () => { try { o.disconnect(g); g.disconnect(masterGain); } catch {} };
                 });
                 maxScheduledTime = Math.max(maxScheduledTime, start + dur);
             };
-
-            // コード進行（合計2.0秒）
             playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now, 0.5);
             playChord([frequencies['ソ'], frequencies['シ'], frequencies['レ']], now + 0.5, 0.5);
             playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now + 1.0, 1.0);
-            
-            // 補助フレーズ（Audio時間で予約）
-            const fragStart = now + 1.0;
-            ['ド','高ド','ソ','ド'].forEach((n, i) => {
-                const start = fragStart + i * 0.10;
-                const o = audioContext.createOscillator();
-                o.type = 'sine';
-                o.frequency.setValueAtTime(frequencies[n], start);
-                const g = audioContext.createGain();
-                g.gain.setValueAtTime(0, start);
-                g.gain.linearRampToValueAtTime(0.5, start + 0.03);
-                g.gain.linearRampToValueAtTime(0.0001, start + 0.15 - 0.02);
-                g.gain.setValueAtTime(0, start + 0.15);
-                o.connect(g); g.connect(masterGain);
-                o.start(start); o.stop(start + 0.15);
-                o.onended = () => { try { o.disconnect(g); g.disconnect(masterGain); } catch {} };
-                maxScheduledTime = Math.max(maxScheduledTime, start + 0.15);
-            });
-
             const waitMs = Math.max(0, (maxScheduledTime - audioContext.currentTime) * 1000 + 20);
             return new Promise(res => setTimeout(res, waitMs));
         }
 
-        // 全体フェード（非常停止用・短時間） - setTimeoutを使わないバージョン
         function fadeOutAllAudio(ms = 120) {
             if (!audioContext || audioContext.state === 'closed') return;
             const t = audioContext.currentTime;
             masterGain.gain.cancelScheduledValues(t);
             masterGain.gain.setValueAtTime(masterGain.gain.value, t);
-            masterGain.gain.linearRampToValueAtTime(0.0001, t + ms / 1000);   // 下げる
-            masterGain.gain.setValueAtTime(1, t + ms / 1000 + 0.02);          // AudioContextの時間で即リセット予約
+            masterGain.gain.linearRampToValueAtTime(0.0001, t + ms / 1000);
+            masterGain.gain.setValueAtTime(1, t + ms / 1000 + 0.02);
         }
 
-        // ゲームの状態変数
         let isTransitioning = false;
         const gameBoard = document.getElementById('gameBoard');
         const remainingPairsDisplay = document.getElementById('remainingPairs');
@@ -660,15 +489,9 @@
         let timerIntervalId;
         const RANKING_PREFIX = 'memoryGameRanking_level';
         const MAX_RANKING_ENTRIES = 5;
-
-        // 端末性能に応じた紙吹雪の枚数調整
         const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-        const deviceMemoryGB = navigator.deviceMemory || 4; 
-        const CONFETTI_COUNT = (deviceMemoryGB <= 2 || isMobile) ? 40 : 100;
-        console.log(`Device Memory: ${deviceMemoryGB}GB, Is Mobile: ${isMobile}, Confetti Count: ${CONFETTI_COUNT}`);
+        const CONFETTI_COUNT = isMobile ? 40 : 100;
 
-
-        // タイマー開始
         function startTimer() {
             startTime = performance.now();
             clearInterval(timerIntervalId);
@@ -678,7 +501,6 @@
                 timerDisplay.textContent = elapsedSeconds.toFixed(2);
             }, 100);
         }
-        // タイマー停止
         function stopTimer() {
             clearInterval(timerIntervalId);
             const endTime = performance.now();
@@ -686,58 +508,64 @@
             timerDisplay.textContent = elapsedSeconds.toFixed(2);
             return elapsedSeconds;
         }
-        // ランキング取得
         function getRanking(level) {
             const rankingJson = localStorage.getItem(RANKING_PREFIX + level);
             return rankingJson ? JSON.parse(rankingJson) : [];
         }
-        // ランキング保存
         function saveRanking(level, newTime, playerName) {
             const ranking = getRanking(level);
             ranking.push({ time: newTime, name: playerName });
             ranking.sort((a, b) => a.time - b.time);
-            const slicedRanking = ranking.slice(0, MAX_RANKING_ENTRIES);
-            localStorage.setItem(RANKING_PREFIX + level, JSON.stringify(slicedRanking));
+            localStorage.setItem(RANKING_PREFIX + level, JSON.stringify(ranking.slice(0, MAX_RANKING_ENTRIES)));
         }
-        // ランキング表示
         function displayRanking(level) {
             const ranking = getRanking(level);
-            rankingTitle.textContent = `🏆 ランキング (レベル${level}) 🏆`;
-            const header = `<thead><tr><th>順位</th><th>名前</th><th>タイム</th></tr></thead>`;
-            let rowsHtml = '';
-            if (ranking.length === 0) {
-                rowsHtml = '<tr><td colspan="3">まだ記録がありません。</td></tr>';
-            } else {
-                rowsHtml = ranking.map((entry, index) =>
-                    `<tr><td>${index + 1}位</td><td>${entry.name}</td><td class="rank-time">${entry.time.toFixed(2)} 秒</td></tr>`
-                ).join('');
-            }
-            rankingTable.innerHTML = header + `<tbody>${rowsHtml}</tbody>`;
+            rankingTitle.textContent = `🏆 ランキング (Lv.${level}) 🏆`;
+            let rowsHtml = ranking.length === 0 ? '<tr><td colspan="3" style="text-align:center">まだ記録がないよ！</td></tr>' : 
+                ranking.map((entry, index) => `<tr><td>${index + 1}位</td><td>${entry.name}</td><td class="rank-time">${entry.time.toFixed(2)} 秒</td></tr>`).join('');
+            rankingTable.innerHTML = `<thead><tr><th>順位</th><th>名前</th><th>タイム</th></tr></thead><tbody>${rowsHtml}</tbody>`;
         }
-        // ゲーム初期化
+
+        function showTutorialHint() {
+            removeTutorialHint();
+            if (cards.length < 2) return;
+            let indices = [0, 1]; 
+            indices.forEach((index, i) => {
+                const card = cards[index];
+                card.classList.add('tutorial-target');
+                const pointer = document.createElement('div');
+                pointer.textContent = '👆';
+                pointer.classList.add('tutorial-pointer');
+                card.appendChild(pointer);
+                if (i === 1) pointer.style.animationDelay = '0.5s';
+            });
+        }
+
+        function removeTutorialHint() {
+            const pointers = document.querySelectorAll('.tutorial-pointer');
+            pointers.forEach(p => p.remove());
+            const targets = document.querySelectorAll('.tutorial-target');
+            targets.forEach(t => t.classList.remove('tutorial-target'));
+        }
+
         function initializeGame() {
-            // ★念のため：新レベル開始時に必ず音量を1へ
             const t = audioContext.currentTime;
             masterGain.gain.cancelScheduledValues(t);
             masterGain.gain.setValueAtTime(1, t);
-            console.log('[masterGain] value reset to 1 at time:', t);
 
             const currentLevelConfig = levels[currentLevelIndex];
             currentLevelDisplay.textContent = currentLevelConfig.id;
             totalPairs = currentLevelConfig.pairs;
             matchedPairs = 0;
             remainingPairsDisplay.textContent = totalPairs;
-            messageDisplay.innerHTML = '<strong style="color:#e53e3e;">うえのおんぷボタンをタップしてね</strong>';
+            messageDisplay.innerHTML = '<span style="color:#ff6b81; font-weight:bold;">カードを2まい タップしてね！</span>';
             timerDisplay.textContent = '0.00';
             clearInterval(timerIntervalId);
             timerStarted = false;
             confettiContainer.innerHTML = '';
 
             gameBoard.className = 'game-board ' + currentLevelConfig.gridClass;
-            
-            while(gameBoard.firstChild) {
-                gameBoard.removeChild(gameBoard.firstChild);
-            }
+            while(gameBoard.firstChild) gameBoard.removeChild(gameBoard.firstChild);
 
             const gameNotes = [...currentLevelConfig.notes, ...currentLevelConfig.notes].sort(() => Math.random() - 0.5);
             const fragment = document.createDocumentFragment();
@@ -747,27 +575,25 @@
                 const cardElement = document.createElement('div');
                 cardElement.classList.add('card');
                 cardElement.dataset.note = note;
-                cardElement.innerHTML = `
-                    <div class="card-inner">
-                        <div class="card-front"></div>
-                        <div class="card-back"></div>
-                    </div>
-                `;
+                cardElement.innerHTML = `<div class="card-inner"><div class="card-front"></div><div class="card-back"></div></div>`;
                 cardElement.addEventListener('click', flipCard, { passive: true });
                 cards.push(cardElement);
                 fragment.appendChild(cardElement);
             });
-
-            requestAnimationFrame(() => {
-                gameBoard.appendChild(fragment);
-            });
+            gameBoard.appendChild(fragment);
             
             resetBoard();
             isTransitioning = false;
             displayRanking(currentLevelConfig.id);
+
+            // ★変更点: レベル1の時だけヒントを表示する
+            if (currentLevelIndex === 0) {
+                setTimeout(showTutorialHint, 500);
+            }
         }
-        // カードめくり
-        async function flipCard() { // ★async関数
+
+        async function flipCard() {
+            removeTutorialHint();
             if (isTransitioning) return;
             if (lockBoard) return;
             if (this === firstCard) return;
@@ -775,32 +601,32 @@
             if (!timerStarted) {
                 startTimer();
                 timerStarted = true;
-                messageDisplay.textContent = `レベル${levels[currentLevelIndex].id}をプレイ中！`;
+                messageDisplay.textContent = `Lv.${levels[currentLevelIndex].id} スタート！`;
             }
             this.classList.add('flipped');
-            playNote(this.dataset.note); // ★awaitを外してキビキビ感を優先
+            playNote(this.dataset.note);
             if (!hasFlippedCard) {
                 hasFlippedCard = true;
                 firstCard = this;
-                messageDisplay.textContent = 'もう一枚カードをめくろう！';
+                messageDisplay.textContent = 'もう1まい えらんでね！';
                 return;
             }
             secondCard = this;
             lockBoard = true;
             checkForMatch();
         }
-        // マッチチェック
+
         function checkForMatch() {
             const isMatch = firstCard.dataset.note === secondCard.dataset.note;
             if (isMatch) {
-                messageDisplay.textContent = 'やったね！同じ音だよ！';
+                messageDisplay.textContent = '✨ すごい！せいかい！ ✨';
                 disableCards();
             } else {
-                messageDisplay.textContent = 'ちがう音だよ。もう一度挑戦！';
+                messageDisplay.textContent = 'あれ？ちがうおとだよ';
                 unflipCards();
             }
         }
-        // マッチ時処理
+
         async function disableCards() {
             firstCard.removeEventListener('click', flipCard);
             secondCard.removeEventListener('click', flipCard);
@@ -814,89 +640,65 @@
             if (matchedPairs === totalPairs) {
                 const finalTime = stopTimer();
                 const currentLevelId = levels[currentLevelIndex].id;
-
                 isTransitioning = true;
                 lockBoard = true;
-
-                const fanfarePromise = (currentLevelIndex === levels.length - 1)
-                    ? playGrandFanfareAsync()
-                    : playFanfareAsync();
-
-                messageDisplay.textContent = `レベル${currentLevelId} クリア！おめでとう！`;
+                const fanfarePromise = (currentLevelIndex === levels.length - 1) ? playGrandFanfareAsync() : playFanfareAsync();
+                messageDisplay.textContent = `Lv.${currentLevelId} クリア！おめでとう！`;
                 launchConfetti();
-
                 await fanfarePromise;
-
-                // fadeOutAllAudio(100); // ★問題の切り分けのため、一旦コメントアウト
-
-                let playerName = prompt(
-                    `おめでとう！レベル${currentLevelId}を ${finalTime.toFixed(2)} 秒でクリアしたよ！\n名前を教えてね:`,
-                    "ななしさん"
-                );
+                let playerName = prompt(`🎉 クリアおめでとう！ 🎉\nLv.${currentLevelId} タイム: ${finalTime.toFixed(2)} 秒\nなまえをおしえてね！`, "ななしさん");
                 if (!playerName || !playerName.trim()) playerName = "ななしさん";
-                else playerName = playerName.trim().substring(0, 10);
-
-                saveRanking(currentLevelId, finalTime, playerName);
+                saveRanking(currentLevelId, finalTime, playerName.trim().substring(0, 10));
                 displayRanking(currentLevelId);
-
                 currentLevelIndex++;
                 if (currentLevelIndex < levels.length) {
-                    messageDisplay.textContent = `次のレベル${levels[currentLevelIndex].id}へ！`;
+                    messageDisplay.textContent = `つぎは Lv.${levels[currentLevelIndex].id} だよ！`;
                     initializeGame();
                 } else {
-                    messageDisplay.textContent = '全レベルクリア！素晴らしい！';
+                    messageDisplay.textContent = '👑 全レベルクリア！すごすぎる！ 👑';
                     currentLevelIndex = 0;
                     isTransitioning = false;
                 }
             }
         }
-        // マッチしない場合
+
         function unflipCards() {
             setTimeout(() => {
                 firstCard.classList.remove('flipped');
                 secondCard.classList.remove('flipped');
                 resetBoard();
-                messageDisplay.textContent = 'カードをタップして音を当てよう！';
+                messageDisplay.textContent = 'カードをめくってね！';
             }, 1200);
         }
-        // ボードリセット
+
         function resetBoard() {
             [hasFlippedCard, lockBoard] = [false, false];
             [firstCard, secondCard] = [null, null];
         }
-        // 紙吹雪
+
         function launchConfetti() {
-            const colors = ['#ed64a6', '#38b2ac', '#f6ad55', '#4299e1', '#f56565'];
+            const colors = ['#ff9ff3', '#feca57', '#ff6b81', '#48dbfb', '#1dd1a1'];
             confettiContainer.innerHTML = ''; 
             const fragment = document.createDocumentFragment();
-
             for (let i = 0; i < CONFETTI_COUNT; i++) {
                 const confetti = document.createElement('div');
-                confetti.classList.add('confetti');
-                
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.animationDelay = Math.random() * 2.5 + 's';
+                confetti.style.position = 'absolute';
+                confetti.style.width = (Math.random() * 10 + 5) + 'px';
+                confetti.style.height = confetti.style.width;
                 confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                
-                const size = Math.random() * 10 + 5;
-                confetti.style.width = size + 'px';
-                confetti.style.height = size + 'px';
-                confetti.style.transform = `rotateZ(${Math.random() * 360}deg)`;
-
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = -20 + 'px';
+                confetti.style.borderRadius = '50%';
+                confetti.animate([
+                    { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+                    { transform: `translate(${Math.random()*100 - 50}px, 100vh) rotate(${Math.random()*720}deg)`, opacity: 0 }
+                ], { duration: Math.random() * 2000 + 2000, easing: 'cubic-bezier(0.25, 1, 0.5, 1)', fill: 'forwards' });
                 fragment.appendChild(confetti);
-                confetti.addEventListener('animationend', () => confetti.remove());
             }
-            requestAnimationFrame(() => {
-                confettiContainer.appendChild(fragment);
-            });
+            confettiContainer.appendChild(fragment);
         }
-        // リセットボタン
-        resetButton.addEventListener('click', () => {
-            fadeOutAllAudio(120);
-            currentLevelIndex = 0;
-            initializeGame();
-        });
-        // 初回ゲーム開始
+
+        resetButton.addEventListener('click', () => { fadeOutAllAudio(120); currentLevelIndex = 0; initializeGame(); });
         initializeGame();
     </script>
 </body>
