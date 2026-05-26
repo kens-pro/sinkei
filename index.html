@@ -303,6 +303,33 @@ h1{font-size:clamp(25px,8vw,44px);line-height:1.05;margin:0;letter-spacing:0;col
 .modal p{margin:6px 0 12px;font-weight:900;color:#536073;line-height:1.5}
 .modal-actions{display:grid;grid-template-columns:1fr;gap:9px;margin-top:12px}
 .final-choice-actions{grid-template-columns:1fr 1fr}
+.line-offer{
+  margin-top:14px;
+  padding:14px;
+  border-radius:18px;
+  background:#e7f8f2;
+  border:2px solid #bdebdc;
+  text-align:left;
+}
+.line-offer[hidden]{display:none}
+.line-offer b{color:#197d5e;font-size:15px}
+.line-offer p{margin:4px 0 10px;font-size:13px;color:#365e52;line-height:1.55}
+.line-btn{
+  display:grid;
+  place-items:center;
+  min-height:54px;
+  border-radius:16px;
+  background:linear-gradient(180deg,#65e8ad,#22bd86);
+  color:#fff;
+  font-weight:950;
+  font-size:15px;
+  text-align:center;
+  text-decoration:none;
+  box-shadow:0 7px 0 rgba(38,48,68,.18);
+  text-shadow:1px 1px 0 rgba(0,0,0,.14);
+}
+.line-btn small{display:block;font-size:11px;font-weight:900;opacity:.94;margin-top:1px}
+.line-caution{font-size:12px;color:#4b665e;margin-top:8px;line-height:1.5}
 @keyframes modalIn{from{transform:translateY(18px) scale(.94);opacity:0}to{transform:none;opacity:1}}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:80;overflow:hidden}
 .piece{position:absolute;top:-20px;border-radius:5px}
@@ -432,6 +459,12 @@ h1{font-size:clamp(25px,8vw,44px);line-height:1.05;margin:0;letter-spacing:0;col
       <button class="main-btn" id="playAgainButton" type="button">もういちど</button>
       <button class="sub-btn" id="quitButton" type="button">やめる</button>
     </div>
+    <div class="line-offer" id="finalLineOffer" hidden>
+      <b>親子音あそび7日間ミニレッスン</b>
+      <p>ドレミ神経衰弱の続きに、おうちで楽しめる音感・リズム感あそびをLINEでお届けします。</p>
+      <a class="line-btn" id="finalLineLink" href="">7日間の音あそびをLINEで受け取る<small>無料・いつでも解除できます</small></a>
+      <div class="line-caution">教室案内だけでなく、親子で楽しめる音あそびをお届けします。</div>
+    </div>
   </div>
 </div>
 <div class="confetti" id="confetti"></div>
@@ -479,6 +512,8 @@ const nextLevelButton = document.getElementById("nextLevelButton");
 const finalChoiceActions = document.getElementById("finalChoiceActions");
 const playAgainButton = document.getElementById("playAgainButton");
 const quitButton = document.getElementById("quitButton");
+const finalLineOffer = document.getElementById("finalLineOffer");
+const finalLineLink = document.getElementById("finalLineLink");
 const confetti = document.getElementById("confetti");
 
 let cards = [];
@@ -495,6 +530,7 @@ let timerIntervalId = 0;
 let lastHeardNote = null;
 let pendingClearTime = 0;
 let streak = 0;
+const lineUrl = "https://lin.ee/oQ0MwPN";
 
 function createAudioGraph(){
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -772,6 +808,7 @@ async function clearLevel(){
     : level.reward + "。タイム " + pendingClearTime.toFixed(2) + "秒";
   nextLevelActions.hidden = finalLevel;
   finalChoiceActions.hidden = !finalLevel;
+  finalLineOffer.hidden = !finalLevel;
   clearOverlay.classList.add("show");
   (finalLevel ? playAgainButton : nextLevelButton).focus();
 }
@@ -837,6 +874,16 @@ replayButton.addEventListener("click", () => {
 nextLevelButton.addEventListener("click", completeClear);
 playAgainButton.addEventListener("click", playAgain);
 quitButton.addEventListener("click", quitGame);
+if (lineUrl) {
+  finalLineLink.href = lineUrl;
+  finalLineLink.target = "_blank";
+  finalLineLink.rel = "noopener noreferrer";
+  finalLineLink.addEventListener("click", () => {
+    if (typeof gtag === "function") {
+      gtag("event", "line_click_memory_game", { position:"final_clear", offer:"7days" });
+    }
+  });
+}
 
 initializeGame();
 </script>
