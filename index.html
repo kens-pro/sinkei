@@ -1,705 +1,881 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <!-- Google tag (gtag.js) -->
+<meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9NZQDFD7DW"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-9NZQDFD7DW');
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-9NZQDFD7DW');
 </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎵 おとあてメモリー！ 🎵</title>
-    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap" rel="stylesheet">
-    <style>
-        /* テーマカラー定義 */
-        :root {
-            --bg-gradient-1: #ff9a9e;
-            --bg-gradient-2: #fecfef;
-            --bg-gradient-3: #a18cd1;
-            
-            --card-back-1: #ff9ff3;
-            --card-back-2: #feca57;
-            
-            --card-front-bg: #ffffff;
-            --text-color: #5f27cd;
-            --accent-color: #ff6b81;
-            
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.9);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: 'Mochiy Pop One', sans-serif;
-            background: linear-gradient(-45deg, var(--bg-gradient-1), var(--bg-gradient-2), var(--bg-gradient-2), var(--bg-gradient-3));
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            padding: 15px;
-            overflow-y: auto;
-            user-select: none;
-            color: #333;
-            background-image: 
-                radial-gradient(white 15%, transparent 16%),
-                radial-gradient(white 15%, transparent 16%);
-            background-position: 0 0, 30px 30px;
-            background-size: 60px 60px;
-            background-blend-mode: overlay;
-        }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        h1 {
-            font-size: 1.8em;
-            color: #fff;
-            text-shadow: 2px 2px 0 var(--text-color), 4px 4px 0 rgba(0,0,0,0.1);
-            margin-bottom: 15px;
-            text-align: center;
-            letter-spacing: 0.05em;
-            animation: floatText 3s ease-in-out infinite;
-        }
-
-        @keyframes floatText {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-
-        /* ゲームボードコンテナ */
-        .game-board-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            border-radius: 30px;
-            padding: 20px;
-            box-shadow: 
-                0 15px 35px rgba(0, 0, 0, 0.15),
-                inset 0 0 0 4px var(--glass-border);
-            max-width: 600px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            position: relative;
-            margin-bottom: 15px;
-        }
-
-        .game-board {
-            display: grid;
-            gap: 10px;
-            width: 100%;
-            justify-content: center;
-            position: relative;
-        }
-
-        /* グリッドレイアウト調整 */
-        .game-board.level-1-grid { grid-template-columns: repeat(2, 1fr); max-width: 160px; }
-        .game-board.level-2-grid { grid-template-columns: repeat(3, 1fr); max-width: 240px; }
-        .game-board.level-3-grid { grid-template-columns: repeat(4, 1fr); max-width: 320px; }
-        .game-board.level-4-grid { grid-template-columns: repeat(4, 1fr); max-width: 320px; }
-        .game-board.level-5-grid { grid-template-columns: repeat(5, 1fr); max-width: 400px; }
-
-        /* カードデザイン */
-        .card {
-            width: 100%;
-            aspect-ratio: 1 / 1.2;
-            position: relative;
-            cursor: pointer;
-            perspective: 1000px;
-            max-width: 75px;
-            justify-self: center;
-        }
-
-        .card-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.6s cubic-bezier(0.4, 2.5, 0.6, 0.8);
-            transform-style: preserve-3d;
-            border-radius: 15px;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
-        }
-
-        .card.flipped .card-inner {
-            transform: rotateY(180deg);
-        }
-        
-        .card.matched {
-            pointer-events: none;
-            animation: popMatched 0.5s forwards;
-        }
-        .card.matched .card-inner {
-            box-shadow: 0 0 15px var(--accent-color);
-        }
-        @keyframes popMatched {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-            100% { transform: scale(1); opacity: 0.8; }
-        }
-
-        .card-front, .card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 15px;
-            border: 3px solid #fff;
-        }
-
-        .card-back {
-            background: linear-gradient(135deg, var(--card-back-1), var(--card-back-2));
-        }
-        .card-back::before {
-            content: '🎵';
-            font-size: 2em;
-            color: #fff;
-            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.2));
-            animation: pulseIcon 2s infinite;
-        }
-        @keyframes pulseIcon {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
-        .card-front {
-            background: var(--card-front-bg);
-            color: var(--text-color);
-            transform: rotateY(180deg);
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-
-        /* チュートリアル用の指アイコンと強調アニメーション */
-        .tutorial-pointer {
-            position: absolute;
-            font-size: 3rem;
-            pointer-events: none;
-            z-index: 100;
-            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
-            animation: tapGesture 1.5s infinite;
-        }
-
-        @keyframes tapGesture {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(-5px, 5px) scale(0.9); }
-            100% { transform: translate(0, 0) scale(1); }
-        }
-
-        .card.tutorial-target {
-            animation: wiggleCard 1.5s infinite;
-            z-index: 10;
-        }
-        .card.tutorial-target .card-inner {
-            box-shadow: 0 0 15px #feca57;
-            border: 2px solid #fff;
-        }
-
-        @keyframes wiggleCard {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(-5deg); }
-            75% { transform: rotate(5deg); }
-        }
-
-        /* 情報パネル */
-        .info-panel {
-            background: #fff;
-            border-radius: 20px;
-            padding: 15px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 8px 0 rgba(0,0,0,0.05);
-            text-align: center;
-            margin-bottom: 15px;
-            border: 4px solid #f0f0f0;
-        }
-        .info-panel p {
-            margin: 5px 0;
-            font-size: 1rem;
-            color: #555;
-        }
-        #message {
-            font-size: 1.1rem;
-            color: var(--accent-color);
-            min-height: 1.5em;
-        }
-        #timerDisplay, #currentLevelDisplay, #remainingPairs {
-            color: #a29bfe;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-
-        /* ボタン */
-        .button-container {
-            width: 100%;
-            max-width: 400px;
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        button {
-            padding: 15px 30px;
-            font-family: 'Mochiy Pop One', sans-serif;
-            font-size: 1.3em;
-            background: linear-gradient(to bottom, #7bed9f, #2ed573);
-            color: #fff;
-            border: 4px solid #fff;
-            border-radius: 50px;
-            cursor: pointer;
-            width: 100%;
-            box-shadow: 0 6px 0 #218c74, 0 10px 10px rgba(0,0,0,0.1);
-            transition: all 0.1s;
-            text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
-        }
-        button:active {
-            transform: translateY(6px);
-            box-shadow: 0 0 0 #218c74, inset 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        /* ランキング */
-        .ranking-section {
-            background: rgba(255,255,255,0.9);
-            border-radius: 20px;
-            padding: 20px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .ranking-section h2 {
-            color: #fd79a8;
-            font-size: 1.3em;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-        #rankingTable {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        #rankingTable th {
-            color: #636e72;
-            padding: 8px;
-            border-bottom: 2px solid #dfe6e9;
-        }
-        #rankingTable td {
-            padding: 10px;
-            border-bottom: 1px solid #dfe6e9;
-            color: #2d3436;
-        }
-        #rankingTable tr:nth-child(1) td { color: #d63031; font-weight: bold; }
-        .rank-time { text-align: right; }
-
-        .confetti-container {
-            position: fixed;
-            top:0; left:0; width:100%; height:100%;
-            pointer-events:none; z-index:9999;
-        }
-
-        @media (max-width: 400px) {
-            h1 { font-size: 1.5em; }
-            .game-board-container { padding: 15px; }
-            .card { max-width: 60px; }
-            .card-back::before { font-size: 1.5em; }
-            .game-board { gap: 8px; }
-            .game-board.level-3-grid { grid-template-columns: repeat(3, 1fr); max-width: 200px; } 
-            .game-board.level-4-grid { grid-template-columns: repeat(4, 1fr); max-width: 260px; }
-            .game-board.level-5-grid { grid-template-columns: repeat(4, 1fr); max-width: 260px; }
-        }
-    </style>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>おとあてメモリー</title>
+<meta name="description" content="音を聞いて同じ音を探す、幼児・児童向けの音感育成メモリーゲーム。">
+<style>
+:root{
+  --ink:#263044;
+  --muted:#68758a;
+  --paper:#fffef8;
+  --line:#e7edf4;
+  --pink:#ff6b9f;
+  --sun:#ffc83d;
+  --mint:#26c99a;
+  --sky:#42a5ff;
+  --violet:#8e70ff;
+  --red:#ff5f57;
+  --shadow:0 18px 40px rgba(38,48,68,.16);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:"Hiragino Maru Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;color:var(--ink);background:#fff6d9}
+body{
+  min-height:100svh;
+  overflow-x:hidden;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  background:
+    radial-gradient(circle at 12% 12%,rgba(255,255,255,.95) 0 10px,transparent 11px),
+    radial-gradient(circle at 88% 18%,rgba(255,255,255,.75) 0 15px,transparent 16px),
+    radial-gradient(circle at 25% 78%,rgba(255,255,255,.7) 0 12px,transparent 13px),
+    linear-gradient(135deg,#ffe071 0%,#ff9ab7 38%,#85defc 72%,#9cf2cd 100%);
+  background-size:140px 140px,170px 170px,190px 190px,100% 100%;
+}
+button{font:inherit;cursor:pointer;border:0}
+.app{width:min(720px,100%);margin:0 auto;padding:14px 12px 24px;display:grid;gap:12px}
+.top{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:10px;
+  background:rgba(255,255,255,.78);
+  border:3px solid rgba(255,255,255,.95);
+  border-radius:18px;
+  padding:10px 12px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(12px);
+}
+h1{font-size:clamp(25px,8vw,44px);line-height:1.05;margin:0;letter-spacing:0;color:#fff;text-shadow:2px 2px 0 #6131bb,4px 5px 0 rgba(38,48,68,.18)}
+.badge{display:grid;place-items:center;width:62px;height:62px;border-radius:18px;background:conic-gradient(from 210deg,var(--sun),var(--pink),var(--violet),var(--sky),var(--mint),var(--sun));color:white;font-size:34px;box-shadow:0 8px 0 rgba(97,49,187,.22)}
+.status{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+.stat{
+  min-height:64px;
+  background:var(--paper);
+  border:2px solid rgba(255,255,255,.92);
+  border-radius:16px;
+  display:grid;
+  place-items:center;
+  padding:7px 4px;
+  box-shadow:0 8px 0 rgba(38,48,68,.08);
+}
+.stat small{font-size:11px;color:var(--muted);font-weight:900}
+.stat b{font-size:clamp(18px,5.5vw,28px);line-height:1;color:#5837c8}
+.stars{display:flex;gap:4px;justify-content:center;min-height:24px}
+.star{filter:grayscale(1);opacity:.36;transform:scale(.9);transition:.25s ease}
+.star.on{filter:none;opacity:1;transform:scale(1.08)}
+.message{
+  min-height:58px;
+  background:#fff;
+  border:3px solid #fff;
+  border-radius:18px;
+  padding:11px 12px;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  font-weight:950;
+  font-size:clamp(16px,4.8vw,22px);
+  color:#e8437b;
+  box-shadow:var(--shadow);
+}
+.board-wrap{
+  position:relative;
+  background:rgba(255,255,255,.86);
+  border:4px solid rgba(255,255,255,.96);
+  border-radius:24px;
+  padding:14px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.board-wrap:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,transparent 0 46%,rgba(255,255,255,.42) 46% 48%,transparent 48%),
+    repeating-linear-gradient(0deg,transparent 0 23px,rgba(97,49,187,.09) 24px 27px,transparent 28px 46px);
+}
+.game-board{position:relative;z-index:1;display:grid;gap:10px;justify-content:center;margin:auto}
+.level-1-grid{grid-template-columns:repeat(2,1fr);max-width:210px}
+.level-2-grid{grid-template-columns:repeat(3,1fr);max-width:330px}
+.level-3-grid{grid-template-columns:repeat(4,1fr);max-width:440px}
+.level-4-grid{grid-template-columns:repeat(4,1fr);max-width:470px}
+.level-5-grid{grid-template-columns:repeat(5,1fr);max-width:560px}
+.card{
+  appearance:none;
+  -webkit-appearance:none;
+  width:100%;
+  max-width:104px;
+  aspect-ratio:2.5/3.5;
+  perspective:900px;
+  justify-self:center;
+  cursor:pointer;
+  border-radius:14px;
+  background:transparent;
+  border:0;
+  padding:0;
+  filter:drop-shadow(0 12px 12px rgba(38,48,68,.22));
+}
+.card-inner{
+  position:relative;
+  display:block;
+  width:100%;
+  height:100%;
+  transform-style:preserve-3d;
+  transform-origin:center center;
+  transition:transform .66s cubic-bezier(.18,1.25,.28,1);
+  border-radius:14px;
+}
+.card.flipped .card-inner{transform:rotateY(180deg) scale(1.02)}
+.card.matched .card-inner{transform:rotateY(180deg) scale(1)}
+.face{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  border-radius:14px;
+  border:4px solid #1f2738;
+  box-shadow:inset 0 0 0 4px #fff,0 7px 0 rgba(65,73,96,.32),0 13px 18px rgba(38,48,68,.32);
+  transform:translateZ(0);
+}
+.back{
+  background:
+    radial-gradient(circle at 50% 50%,#fff 0 18%,transparent 19%),
+    repeating-linear-gradient(45deg,rgba(255,255,255,.18) 0 7px,transparent 8px 17px),
+    linear-gradient(135deg,#173d98 0%,#245ad8 50%,#173d98 100%);
+  overflow:hidden;
+}
+.back:before{
+  content:"";
+  position:absolute;
+  inset:9px;
+  border:3px double rgba(255,255,255,.96);
+  border-radius:9px;
+  background:
+    radial-gradient(circle at 23% 22%,#ff4d84 0 8px,transparent 9px),
+    radial-gradient(circle at 77% 78%,#ff4d84 0 8px,transparent 9px),
+    radial-gradient(circle at 77% 22%,#ffd33d 0 7px,transparent 8px),
+    radial-gradient(circle at 23% 78%,#ffd33d 0 7px,transparent 8px),
+    linear-gradient(90deg,transparent 0 46%,rgba(255,255,255,.62) 47% 53%,transparent 54%),
+    linear-gradient(0deg,transparent 0 46%,rgba(255,255,255,.62) 47% 53%,transparent 54%);
+}
+.back:after{
+  content:"♠ ♥\A♦ ♣";
+  position:relative;
+  white-space:pre;
+  width:58%;
+  aspect-ratio:1;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  background:#fff;
+  color:#173d98;
+  font-size:clamp(17px,5.4vw,27px);
+  line-height:1.05;
+  text-align:center;
+  box-shadow:0 5px 0 rgba(12,29,77,.24);
+}
+.front{
+  transform:rotateY(180deg);
+  background:
+    linear-gradient(180deg,#ffffff 0%,#fff7fb 100%);
+  color:#5536bf;
+  font-weight:950;
+  overflow:hidden;
+}
+.card:not(.matched).flipped .front{
+  background:
+    radial-gradient(circle at 50% 48%,rgba(66,165,255,.16) 0 24%,transparent 25%),
+    linear-gradient(180deg,#ffffff 0%,#f4f8ff 100%);
+}
+.front:before,.front:after{
+  content:"♪";
+  position:absolute;
+  font-size:18px;
+  color:currentColor;
+  opacity:.75;
+}
+.front:before{top:8px;left:9px}
+.front:after{right:9px;bottom:8px;transform:rotate(180deg)}
+.front .note-label{
+  opacity:0;
+  transform:scale(.72);
+  transition:.2s ease;
+  display:grid;
+  place-items:center;
+  gap:0;
+  line-height:1;
+}
+.note-label .solfege{font-size:clamp(24px,8vw,38px)}
+.note-label .letter{font-size:clamp(15px,4.6vw,22px);color:#263044;margin-top:3px}
+.note-label .mark{font-size:clamp(22px,7vw,34px);margin-top:2px}
+.matched .front .note-label{opacity:1;transform:scale(1.08)}
+.matched{pointer-events:none;animation:matchedPop .62s ease both}
+.matched .front{
+  background:
+    radial-gradient(circle at 50% 45%,#ffffff 0 31%,transparent 32%),
+    linear-gradient(180deg,#effff7,#bdf8dc);
+  border-color:#119466;
+  box-shadow:inset 0 0 0 4px #fff,0 0 0 7px rgba(38,201,154,.45),0 9px 0 rgba(18,143,103,.38),0 18px 30px rgba(38,201,154,.36);
+}
+.matched .front:after{
+  content:"せいかい!";
+  right:auto;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:88%;
+  padding:4px 7px;
+  border-radius:999px;
+  background:#22bd86;
+  color:white;
+  font-size:clamp(11px,3.4vw,15px);
+  opacity:1;
+  box-shadow:0 3px 0 rgba(18,143,103,.35);
+}
+.first-choice .face{box-shadow:0 0 0 6px rgba(255,200,61,.58),0 9px 0 rgba(217,135,23,.25),0 18px 24px rgba(255,200,61,.25)}
+.match-spark{
+  position:absolute;
+  z-index:4;
+  left:50%;
+  top:50%;
+  width:9px;
+  height:9px;
+  border-radius:999px;
+  background:#fff;
+  box-shadow:0 0 0 3px rgba(255,255,255,.45);
+  pointer-events:none;
+}
+@keyframes bounceNote{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-8px) rotate(8deg)}}
+@keyframes matchedPop{0%{transform:scale(1)}35%{transform:scale(1.18) rotate(-2deg)}70%{transform:scale(1.08) rotate(2deg)}100%{transform:scale(1);opacity:1}}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.main-btn,.sub-btn{
+  min-height:56px;
+  border-radius:18px;
+  color:#fff;
+  font-weight:950;
+  font-size:clamp(15px,4.2vw,20px);
+  box-shadow:0 7px 0 rgba(38,48,68,.18);
+  text-shadow:1px 1px 0 rgba(0,0,0,.14);
+}
+.main-btn{background:linear-gradient(180deg,#65e8ad,#22bd86)}
+.sub-btn{background:linear-gradient(180deg,#7cc8ff,#348fe0)}
+.main-btn:active,.sub-btn:active{transform:translateY(5px);box-shadow:0 2px 0 rgba(38,48,68,.18)}
+.ranking{
+  background:rgba(255,255,255,.88);
+  border:2px solid #fff;
+  border-radius:18px;
+  padding:12px;
+  box-shadow:0 12px 28px rgba(38,48,68,.13);
+}
+.ranking h2{margin:0 0 8px;font-size:18px;text-align:center;color:#e8437b}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px;border-bottom:1px solid var(--line)}
+th{color:var(--muted)}
+td:last-child{text-align:right}
+tbody tr:first-child td{font-weight:950;color:#e8437b}
+.overlay{
+  position:fixed;
+  inset:0;
+  z-index:50;
+  display:none;
+  place-items:center;
+  padding:20px;
+  background:rgba(39,48,68,.35);
+  backdrop-filter:blur(6px);
+}
+.overlay.show{display:grid}
+.modal{
+  width:min(390px,100%);
+  background:#fffef8;
+  border:4px solid white;
+  border-radius:24px;
+  padding:20px 16px 16px;
+  text-align:center;
+  box-shadow:0 25px 60px rgba(0,0,0,.25);
+  animation:modalIn .28s ease both;
+}
+.modal h3{font-size:clamp(26px,8vw,38px);margin:0 0 8px;color:#6131bb}
+.modal p{margin:6px 0 12px;font-weight:900;color:#536073;line-height:1.5}
+.name-input{width:100%;min-height:52px;border-radius:14px;border:2px solid var(--line);padding:8px 12px;font:inherit;font-weight:900;text-align:center}
+.modal-actions{display:grid;grid-template-columns:1fr;gap:9px;margin-top:12px}
+@keyframes modalIn{from{transform:translateY(18px) scale(.94);opacity:0}to{transform:none;opacity:1}}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:80;overflow:hidden}
+.piece{position:absolute;top:-20px;border-radius:5px}
+.pointer{position:absolute;z-index:5;font-size:42px;right:-10px;bottom:-8px;animation:tap 1.25s ease-in-out infinite;pointer-events:none}
+.tutorial-target{animation:wiggle 1.2s ease-in-out infinite}
+@keyframes tap{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5px,6px) scale(.86)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+@media (max-width:430px){
+  body{
+    background-size:190px 190px,230px 230px,250px 250px,100% 100%;
+  }
+  .app{
+    padding:7px 7px 18px;
+    gap:8px;
+  }
+  .board-wrap{
+    order:1;
+    padding:8px;
+    border-width:2px;
+    border-radius:16px;
+    overflow:visible;
+  }
+  .board-wrap:before{opacity:.45}
+  .game-board{
+    gap:7px;
+    width:100%;
+  }
+  .card{
+    border-radius:13px;
+    min-width:0;
+  }
+  .face,.card-inner{border-radius:13px}
+  .level-1-grid{grid-template-columns:repeat(2,1fr);max-width:190px}
+  .level-1-grid .card{max-width:92px}
+  .level-2-grid{grid-template-columns:repeat(3,1fr);max-width:260px}
+  .level-2-grid .card{max-width:80px}
+  .level-3-grid{grid-template-columns:repeat(3,1fr);max-width:260px}
+  .level-3-grid .card{max-width:80px}
+  .level-4-grid{grid-template-columns:repeat(4,1fr);max-width:306px}
+  .level-4-grid .card{max-width:70px}
+  .level-5-grid{grid-template-columns:repeat(4,1fr);max-width:293px}
+  .level-5-grid .card{max-width:clamp(58px, 17.5vw, 68px)}
+  .status{
+    order:2;
+    grid-template-columns:repeat(3,1fr);
+    gap:5px;
+  }
+  .stat{
+    min-height:42px;
+    border-radius:12px;
+    padding:4px 3px;
+    box-shadow:0 4px 0 rgba(38,48,68,.08);
+  }
+  .stat small{font-size:10px}
+  .stat b{font-size:17px}
+  .stars{
+    order:3;
+    min-height:18px;
+    gap:2px;
+  }
+  .star{font-size:15px}
+  .message{
+    order:4;
+    min-height:42px;
+    border-radius:13px;
+    padding:8px 10px;
+    font-size:15px;
+    box-shadow:0 8px 18px rgba(38,48,68,.12);
+  }
+  .controls{order:5;grid-template-columns:1fr 1fr;gap:7px}
+  .main-btn,.sub-btn{
+    min-height:45px;
+    border-radius:14px;
+    font-size:14px;
+    box-shadow:0 5px 0 rgba(38,48,68,.16);
+  }
+  .top{
+    order:6;
+    grid-template-columns:1fr auto;
+    padding:8px 10px;
+    border-radius:14px;
+    box-shadow:0 8px 18px rgba(38,48,68,.12);
+  }
+  h1{font-size:24px}
+  .badge{width:44px;height:44px;border-radius:13px;font-size:25px}
+  .ranking{
+    order:7;
+    border-radius:14px;
+    padding:10px;
+  }
+  .ranking h2{font-size:16px}
+  table{font-size:13px}
+  th,td{padding:7px 6px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
 </head>
 <body>
-    <h1>🎵 おとあて<br>メモリー！ 🎵</h1>
-    
-    <div class="game-board-container">
-        <div class="game-board" id="gameBoard"></div>
+<main class="app">
+  <header class="top">
+    <h1>おとあて<br>メモリー</h1>
+    <div class="badge" aria-hidden="true">♫</div>
+  </header>
+
+  <section class="status" aria-label="ゲーム情報">
+    <div class="stat"><small>レベル</small><b id="levelDisplay">1</b></div>
+    <div class="stat"><small>のこり</small><b><span id="remainingDisplay">1</span>ペア</b></div>
+    <div class="stat"><small>タイム</small><b><span id="timerDisplay">0.00</span></b></div>
+  </section>
+
+  <div class="stars" id="starDisplay" aria-label="進み具合"></div>
+  <div class="message" id="message">カードを2まい タップしてね</div>
+
+  <section class="board-wrap">
+    <div class="game-board" id="gameBoard"></div>
+  </section>
+
+  <section class="controls">
+    <button class="main-btn" id="resetButton" type="button">さいしょから</button>
+    <button class="sub-btn" id="replayButton" type="button">おとをもういちど</button>
+  </section>
+
+  <section class="ranking">
+    <h2 id="rankingTitle">ランキング</h2>
+    <table id="rankingTable"></table>
+  </section>
+</main>
+
+<div class="overlay" id="clearOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h3 id="clearTitle">レベルクリア</h3>
+    <p id="clearText"></p>
+    <input class="name-input" id="playerNameInput" maxlength="10" value="ななしさん" aria-label="なまえ">
+    <div class="modal-actions">
+      <button class="main-btn" id="saveScoreButton" type="button">きろくして つぎへ</button>
     </div>
+  </div>
+</div>
+<div class="confetti" id="confetti"></div>
 
-    <div class="info-panel">
-        <p>レベル: <span id="currentLevelDisplay">1</span> / のこり: <span id="remainingPairs"></span> ペア</p>
-        <p id="message"></p>
-        <p>タイム: <span id="timerDisplay">0.00</span> 秒</p>
-    </div>
+<script>
+let audioContext;
+let masterGain;
+let activeOscillators = new Set();
 
-    <div class="button-container">
-        <button id="resetButton">さいしょから！</button>
-    </div>
+const frequencies = {
+  "ド":261.625565, "ド#":277.182631, "レ":293.664768, "レ#":311.126984,
+  "ミ":329.627557, "ファ":349.228231, "ファ#":369.994423, "ソ":391.995436,
+  "ソ#":415.304698, "ラ":440.000000, "ラ#":466.163762, "シ":493.883301, "高ド":523.251131
+};
+const allNotes = ["ド","ド#","レ","レ#","ミ","ファ","ファ#","ソ","ソ#","ラ","ラ#","シ","高ド"];
+const noteColors = {
+  "ド":"#ff6b6b","ド#":"#ff8f43","レ":"#feca57","レ#":"#b8e056","ミ":"#1dd1a1","ファ":"#48dbfb",
+  "ファ#":"#54a0ff","ソ":"#5f7cfa","ソ#":"#7d5fff","ラ":"#a55eea","ラ#":"#f368e0","シ":"#ff6b9f","高ド":"#ff4757"
+};
+const noteLetters = {
+  "ド":"C","ド#":"C#","レ":"D","レ#":"D#","ミ":"E","ファ":"F","ファ#":"F#",
+  "ソ":"G","ソ#":"G#","ラ":"A","ラ#":"A#","シ":"B","高ド":"C"
+};
+const levels = [
+  { id:1, name:"はじめのド", notes:["ド"], gridClass:"level-1-grid", reward:"ドの音、みつけたね" },
+  { id:2, name:"ドレミ", notes:["ド","レ","ミ"], gridClass:"level-2-grid", reward:"ド・レ・ミの耳になってきた" },
+  { id:3, name:"5つのおと", notes:["ド","レ","ミ","ファ","ソ"], gridClass:"level-3-grid", reward:"音の高さをおぼえられたね" },
+  { id:4, name:"1オクターブ", notes:["ド","レ","ミ","ファ","ソ","ラ","シ","高ド"], gridClass:"level-4-grid", reward:"白鍵の音がつながってきた" },
+  { id:5, name:"くろけんも", notes:allNotes, gridClass:"level-5-grid", reward:"ぜんぶの音をききわけたよ" }
+];
 
-    <div class="ranking-section">
-        <h2 id="rankingTitle">🏆 ランキング (Lv.1) 🏆</h2>
-        <table id="rankingTable"></table>
-    </div>
+const gameBoard = document.getElementById("gameBoard");
+const levelDisplay = document.getElementById("levelDisplay");
+const remainingDisplay = document.getElementById("remainingDisplay");
+const timerDisplay = document.getElementById("timerDisplay");
+const message = document.getElementById("message");
+const starDisplay = document.getElementById("starDisplay");
+const rankingTitle = document.getElementById("rankingTitle");
+const rankingTable = document.getElementById("rankingTable");
+const resetButton = document.getElementById("resetButton");
+const replayButton = document.getElementById("replayButton");
+const clearOverlay = document.getElementById("clearOverlay");
+const clearTitle = document.getElementById("clearTitle");
+const clearText = document.getElementById("clearText");
+const playerNameInput = document.getElementById("playerNameInput");
+const saveScoreButton = document.getElementById("saveScoreButton");
+const confetti = document.getElementById("confetti");
 
-    <div id="confettiContainer" class="confetti-container"></div>
+let cards = [];
+let firstCard = null;
+let secondCard = null;
+let hasFlippedCard = false;
+let lockBoard = false;
+let matchedPairs = 0;
+let totalPairs = 0;
+let currentLevelIndex = 0;
+let timerStarted = false;
+let startTime = 0;
+let timerIntervalId = 0;
+let lastHeardNote = null;
+let pendingClearTime = 0;
+let streak = 0;
+const RANKING_PREFIX = "otoateMemoryRankingLevel";
+const MAX_RANKING = 5;
 
-    <script>
-        // Web Audio APIの初期化
-        let audioContext;
-        let masterGain;
+function createAudioGraph(){
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  audioContext = new Ctx();
+  masterGain = audioContext.createGain();
+  masterGain.gain.value = 0.92;
+  masterGain.connect(audioContext.destination);
+}
+createAudioGraph();
 
-        function recreateAudioGraph() {
-            const Ctx = window.AudioContext || window.webkitAudioContext;
-            audioContext = new Ctx();
-            masterGain = audioContext.createGain();
-            masterGain.gain.value = 1;
-            masterGain.connect(audioContext.destination);
-        }
+async function resumeAudio(){
+  if (!audioContext || audioContext.state === "closed") createAudioGraph();
+  if (audioContext.state === "suspended" || audioContext.state === "interrupted") {
+    try { await audioContext.resume(); } catch(e) {}
+  }
+}
+document.addEventListener("pointerdown", resumeAudio, {passive:true});
+document.addEventListener("visibilitychange", () => { if (!document.hidden) resumeAudio(); });
+window.addEventListener("pageshow", resumeAudio);
 
-        recreateAudioGraph();
+async function playNote(note, duration = .46, type = "triangle"){
+  await resumeAudio();
+  const frequency = frequencies[note];
+  if (!frequency) return;
+  const t = audioContext.currentTime + .005;
+  const end = t + duration;
+  const osc = audioContext.createOscillator();
+  const overtone = audioContext.createOscillator();
+  const body = audioContext.createGain();
+  const overtoneGain = audioContext.createGain();
+  const attackClick = audioContext.createGain();
+  const bright = audioContext.createBiquadFilter();
+  osc.type = type;
+  overtone.type = "sine";
+  osc.frequency.setValueAtTime(frequency, t);
+  overtone.frequency.setValueAtTime(frequency * 2, t);
+  bright.type = "highshelf";
+  bright.frequency.setValueAtTime(1200, t);
+  bright.gain.setValueAtTime(5, t);
+  body.gain.setValueAtTime(0.0001, t);
+  body.gain.exponentialRampToValueAtTime(.52, t + .018);
+  body.gain.exponentialRampToValueAtTime(.36, t + .09);
+  body.gain.exponentialRampToValueAtTime(.0001, end);
+  overtoneGain.gain.setValueAtTime(.0001, t);
+  overtoneGain.gain.exponentialRampToValueAtTime(.08, t + .012);
+  overtoneGain.gain.exponentialRampToValueAtTime(.0001, t + .18);
+  attackClick.gain.setValueAtTime(.16, t);
+  attackClick.gain.exponentialRampToValueAtTime(.0001, t + .035);
+  osc.connect(bright);
+  bright.connect(body);
+  overtone.connect(overtoneGain);
+  overtoneGain.connect(body);
+  body.connect(masterGain);
+  osc.connect(attackClick);
+  attackClick.connect(masterGain);
+  osc.start(t);
+  overtone.start(t);
+  osc.stop(end + .02);
+  overtone.stop(end + .02);
+  activeOscillators.add(osc);
+  activeOscillators.add(overtone);
+  osc.onended = () => {
+    activeOscillators.delete(osc);
+    try { osc.disconnect(); bright.disconnect(); body.disconnect(); attackClick.disconnect(); } catch(e) {}
+  };
+  overtone.onended = () => {
+    activeOscillators.delete(overtone);
+    try { overtone.disconnect(); overtoneGain.disconnect(); } catch(e) {}
+  };
+}
 
-        async function resumeAudioContextIfNeeded() {
-            if (!audioContext) recreateAudioGraph();
-            if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
-                try { await audioContext.resume(); } catch (e) {}
-            } else if (audioContext.state === 'closed') {
-                recreateAudioGraph();
-                try { await audioContext.resume(); } catch (e) {}
-            }
-        }
+function stopAllAudio(ms = 120){
+  if (!audioContext || audioContext.state === "closed") return;
+  const t = audioContext.currentTime;
+  masterGain.gain.cancelScheduledValues(t);
+  masterGain.gain.setValueAtTime(masterGain.gain.value, t);
+  masterGain.gain.linearRampToValueAtTime(.0001, t + ms / 1000);
+  setTimeout(() => {
+    activeOscillators.forEach(o => { try { o.stop(); } catch(e) {} });
+    activeOscillators.clear();
+    const now = audioContext.currentTime;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setValueAtTime(.92, now);
+  }, ms + 30);
+}
 
-        document.addEventListener('pointerdown', resumeAudioContextIfNeeded, { passive: true });
-        document.addEventListener('touchstart', resumeAudioContextIfNeeded, { passive: true });
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeAudioContextIfNeeded(); });
-        window.addEventListener('pageshow', () => { resumeAudioContextIfNeeded(); });
+async function playLevelFanfare(finalLevel){
+  await resumeAudio();
+  const seq = finalLevel ? ["ド","ミ","ソ","高ド","ソ","高ド"] : ["ド","ミ","ソ","高ド"];
+  for (const note of seq) {
+    playNote(note, finalLevel ? .22 : .18, finalLevel ? "triangle" : "sine");
+    await wait(finalLevel ? 150 : 140);
+  }
+}
 
-        // 周波数設定
-        const frequencies = {
-            'ド': 261.63, 'ド#': 277.18, 'レ': 293.66, 'レ#': 311.13,
-            'ミ': 329.63, 'ファ': 349.23, 'ファ#': 369.99, 'ソ': 392.00,
-            'ソ#': 415.30, 'ラ': 440.00, 'ラ#': 466.16, 'シ': 493.88, '高ド': 523.25
-        };
-        const chromaticScaleNames = ['ド', 'ド#', 'レ', 'レ#', 'ミ', 'ファ', 'ファ#', 'ソ', 'ソ#', 'ラ', 'ラ#', 'シ', '高ド'];
+function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+function shuffle(items){ return items.map(v => [Math.random(), v]).sort((a,b) => a[0] - b[0]).map(v => v[1]); }
 
-        const levels = [
-            { id: 1, name: 'ドだけ', notes: ['ド'], pairs: 1, gridClass: 'level-1-grid' },
-            { id: 2, name: 'ドレミ', notes: ['ド', 'レ', 'ミ'], pairs: 3, gridClass: 'level-2-grid' },
-            { id: 3, name: 'ドレミファソ', notes: ['ド', 'レ', 'ミ', 'ファ', 'ソ'], pairs: 5, gridClass: 'level-3-grid' },
-            { id: 4, name: 'ドレミファソラシド', notes: ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', '高ド'], pairs: 8, gridClass: 'level-4-grid' },
-            { id: 5, name: '黒鍵と白鍵', notes: chromaticScaleNames, pairs: 13, gridClass: 'level-5-grid' }
-        ];
+function startTimer(){
+  startTime = performance.now();
+  clearInterval(timerIntervalId);
+  timerIntervalId = setInterval(() => {
+    timerDisplay.textContent = ((performance.now() - startTime) / 1000).toFixed(2);
+  }, 80);
+}
+function stopTimer(){
+  clearInterval(timerIntervalId);
+  const seconds = (performance.now() - startTime) / 1000;
+  timerDisplay.textContent = seconds.toFixed(2);
+  return seconds;
+}
 
-        async function playNote(noteName, duration = 0.5) {
-            await resumeAudioContextIfNeeded();
-            const frequency = frequencies[noteName];
-            if (!frequency) return 0;
-            const oscillator = audioContext.createOscillator();
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-            const gainNode = audioContext.createGain();
-            const t0 = audioContext.currentTime;
-            const t1 = t0 + duration;
-            gainNode.gain.setValueAtTime(0, t0);
-            gainNode.gain.linearRampToValueAtTime(0.5, t0 + 0.05);
-            gainNode.gain.linearRampToValueAtTime(0.0001, t1 - 0.02);
-            gainNode.gain.setValueAtTime(0, t1);
-            oscillator.connect(gainNode);
-            gainNode.connect(masterGain);
-            oscillator.start(t0);
-            oscillator.stop(t1);
-            oscillator.onended = () => { try { oscillator.disconnect(gainNode); gainNode.disconnect(masterGain); } catch (e) {} };
-            return duration;
-        }
+function getRanking(level){
+  try { return JSON.parse(localStorage.getItem(RANKING_PREFIX + level)) || []; }
+  catch(e) { return []; }
+}
+function saveRanking(level, time, name){
+  const ranking = getRanking(level);
+  ranking.push({time, name});
+  ranking.sort((a,b) => a.time - b.time);
+  localStorage.setItem(RANKING_PREFIX + level, JSON.stringify(ranking.slice(0, MAX_RANKING)));
+}
+function displayRanking(level){
+  const ranking = getRanking(level);
+  rankingTitle.textContent = "Lv." + level + " ランキング";
+  const rows = ranking.length
+    ? ranking.map((entry, index) => `<tr><td>${index + 1}位</td><td>${escapeHtml(entry.name)}</td><td>${entry.time.toFixed(2)}秒</td></tr>`).join("")
+    : `<tr><td colspan="3" style="text-align:center">まだ きろくがないよ</td></tr>`;
+  rankingTable.innerHTML = `<thead><tr><th>じゅんい</th><th>なまえ</th><th>タイム</th></tr></thead><tbody>${rows}</tbody>`;
+}
+function escapeHtml(text){
+  return String(text).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
 
-        async function playFanfareAsync() {
-            await resumeAudioContextIfNeeded();
-            const seq = [{note:'ド',dur:0.2},{note:'ミ',dur:0.2},{note:'ソ',dur:0.2},{note:'高ド',dur:0.4}];
-            let t = audioContext.currentTime;
-            seq.forEach(s => {
-                const o = audioContext.createOscillator(); o.type = 'triangle';
-                o.frequency.setValueAtTime(frequencies[s.note], t);
-                const g = audioContext.createGain();
-                g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(0.7, t + 0.05);
-                g.gain.linearRampToValueAtTime(0.0001, t + s.dur - 0.02);
-                o.connect(g); g.connect(masterGain);
-                o.start(t); o.stop(t + s.dur);
-                t += s.dur;
-            });
-            const waitMs = Math.max(0, (t - audioContext.currentTime) * 1000 + 20);
-            return new Promise(res => setTimeout(res, waitMs));
-        }
+function renderStars(){
+  starDisplay.innerHTML = levels.map((_, i) => `<span class="star ${i <= currentLevelIndex ? "on" : ""}">⭐</span>`).join("");
+}
 
-        async function playGrandFanfareAsync() {
-            await resumeAudioContextIfNeeded();
-            const now = audioContext.currentTime;
-            let maxScheduledTime = now;
-            const playChord = (freqs, start, dur) => {
-                freqs.forEach(f => {
-                    const o = audioContext.createOscillator(); o.type = 'sawtooth';
-                    o.frequency.setValueAtTime(f, start);
-                    const g = audioContext.createGain();
-                    g.gain.setValueAtTime(0, start);
-                    g.gain.linearRampToValueAtTime(0.9, start + 0.05);
-                    g.gain.linearRampToValueAtTime(0.0001, start + dur - 0.02);
-                    o.connect(g); g.connect(masterGain);
-                    o.start(start); o.stop(start + dur);
-                });
-                maxScheduledTime = Math.max(maxScheduledTime, start + dur);
-            };
-            playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now, 0.5);
-            playChord([frequencies['ソ'], frequencies['シ'], frequencies['レ']], now + 0.5, 0.5);
-            playChord([frequencies['ド'], frequencies['ミ'], frequencies['ソ']], now + 1.0, 1.0);
-            const waitMs = Math.max(0, (maxScheduledTime - audioContext.currentTime) * 1000 + 20);
-            return new Promise(res => setTimeout(res, waitMs));
-        }
+function initializeGame(){
+  stopAllAudio(40);
+  const level = levels[currentLevelIndex];
+  matchedPairs = 0;
+  totalPairs = level.notes.length;
+  firstCard = null;
+  secondCard = null;
+  hasFlippedCard = false;
+  lockBoard = false;
+  timerStarted = false;
+  lastHeardNote = null;
+  streak = 0;
+  clearInterval(timerIntervalId);
+  timerDisplay.textContent = "0.00";
+  levelDisplay.textContent = level.id;
+  remainingDisplay.textContent = totalPairs;
+  message.textContent = level.id === 1 ? "おなじ音を もう1まい さがそう" : "カードを2まい タップしてね";
+  gameBoard.className = "game-board " + level.gridClass;
+  gameBoard.innerHTML = "";
+  confetti.innerHTML = "";
+  renderStars();
+  displayRanking(level.id);
 
-        function fadeOutAllAudio(ms = 120) {
-            if (!audioContext || audioContext.state === 'closed') return;
-            const t = audioContext.currentTime;
-            masterGain.gain.cancelScheduledValues(t);
-            masterGain.gain.setValueAtTime(masterGain.gain.value, t);
-            masterGain.gain.linearRampToValueAtTime(0.0001, t + ms / 1000);
-            masterGain.gain.setValueAtTime(1, t + ms / 1000 + 0.02);
-        }
+  const gameNotes = shuffle([...level.notes, ...level.notes]);
+  const fragment = document.createDocumentFragment();
+  cards = gameNotes.map((note, index) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "card";
+    card.dataset.note = note;
+    card.dataset.index = index;
+    card.innerHTML = `<span class="card-inner"><span class="face front" style="color:${noteColors[note]}"><span class="note-label"><span class="solfege">${note}</span><span class="letter">${noteLetters[note]}</span><span class="mark">♪</span></span></span><span class="face back"></span></span>`;
+    card.addEventListener("click", flipCard);
+    fragment.appendChild(card);
+    return card;
+  });
+  gameBoard.appendChild(fragment);
 
-        let isTransitioning = false;
-        const gameBoard = document.getElementById('gameBoard');
-        const remainingPairsDisplay = document.getElementById('remainingPairs');
-        const messageDisplay = document.getElementById('message');
-        const timerDisplay = document.getElementById('timerDisplay');
-        const currentLevelDisplay = document.getElementById('currentLevelDisplay');
-        const rankingTitle = document.getElementById('rankingTitle');
-        const rankingTable = document.getElementById('rankingTable');
-        const resetButton = document.getElementById('resetButton');
-        const confettiContainer = document.getElementById('confettiContainer');
-        let cards = [];
-        let hasFlippedCard = false;
-        let lockBoard = false;
-        let firstCard, secondCard;
-        let matchedPairs = 0;
-        let totalPairs = 0;
-        let currentLevelIndex = 0;
-        let timerStarted = false;
-        let startTime;
-        let timerIntervalId;
-        const RANKING_PREFIX = 'memoryGameRanking_level';
-        const MAX_RANKING_ENTRIES = 5;
-        const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-        const CONFETTI_COUNT = isMobile ? 40 : 100;
+  if (level.id === 1) setTimeout(showTutorial, 480);
+}
 
-        function startTimer() {
-            startTime = performance.now();
-            clearInterval(timerIntervalId);
-            timerIntervalId = setInterval(() => {
-                const currentTime = performance.now();
-                const elapsedSeconds = (currentTime - startTime) / 1000;
-                timerDisplay.textContent = elapsedSeconds.toFixed(2);
-            }, 100);
-        }
-        function stopTimer() {
-            clearInterval(timerIntervalId);
-            const endTime = performance.now();
-            const elapsedSeconds = (endTime - startTime) / 1000;
-            timerDisplay.textContent = elapsedSeconds.toFixed(2);
-            return elapsedSeconds;
-        }
-        function getRanking(level) {
-            const rankingJson = localStorage.getItem(RANKING_PREFIX + level);
-            return rankingJson ? JSON.parse(rankingJson) : [];
-        }
-        function saveRanking(level, newTime, playerName) {
-            const ranking = getRanking(level);
-            ranking.push({ time: newTime, name: playerName });
-            ranking.sort((a, b) => a.time - b.time);
-            localStorage.setItem(RANKING_PREFIX + level, JSON.stringify(ranking.slice(0, MAX_RANKING_ENTRIES)));
-        }
-        function displayRanking(level) {
-            const ranking = getRanking(level);
-            rankingTitle.textContent = `🏆 ランキング (Lv.${level}) 🏆`;
-            let rowsHtml = ranking.length === 0 ? '<tr><td colspan="3" style="text-align:center">まだ記録がないよ！</td></tr>' : 
-                ranking.map((entry, index) => `<tr><td>${index + 1}位</td><td>${entry.name}</td><td class="rank-time">${entry.time.toFixed(2)} 秒</td></tr>`).join('');
-            rankingTable.innerHTML = `<thead><tr><th>順位</th><th>名前</th><th>タイム</th></tr></thead><tbody>${rowsHtml}</tbody>`;
-        }
+function showTutorial(){
+  if (currentLevelIndex !== 0 || !cards[0] || firstCard) return;
+  cards.slice(0, 2).forEach((card, i) => {
+    card.classList.add("tutorial-target");
+    const pointer = document.createElement("span");
+    pointer.className = "pointer";
+    pointer.textContent = "👆";
+    pointer.style.animationDelay = i ? ".45s" : "0s";
+    card.appendChild(pointer);
+  });
+}
+function removeTutorial(){
+  document.querySelectorAll(".pointer").forEach(el => el.remove());
+  document.querySelectorAll(".tutorial-target").forEach(el => el.classList.remove("tutorial-target"));
+}
 
-        function showTutorialHint() {
-            removeTutorialHint();
-            if (cards.length < 2) return;
-            let indices = [0, 1]; 
-            indices.forEach((index, i) => {
-                const card = cards[index];
-                card.classList.add('tutorial-target');
-                const pointer = document.createElement('div');
-                pointer.textContent = '👆';
-                pointer.classList.add('tutorial-pointer');
-                card.appendChild(pointer);
-                if (i === 1) pointer.style.animationDelay = '0.5s';
-            });
-        }
+async function flipCard(){
+  removeTutorial();
+  if (lockBoard || this === firstCard || this.classList.contains("matched")) return;
+  await resumeAudio();
+  if (!timerStarted) {
+    startTimer();
+    timerStarted = true;
+  }
+  const note = this.dataset.note;
+  lastHeardNote = note;
+  this.classList.add("flipped");
+  playNote(note);
 
-        function removeTutorialHint() {
-            const pointers = document.querySelectorAll('.tutorial-pointer');
-            pointers.forEach(p => p.remove());
-            const targets = document.querySelectorAll('.tutorial-target');
-            targets.forEach(t => t.classList.remove('tutorial-target'));
-        }
+  if (!hasFlippedCard) {
+    hasFlippedCard = true;
+    firstCard = this;
+    firstCard.classList.add("first-choice");
+    message.textContent = "いまの音と おなじ音を さがそう";
+    return;
+  }
 
-        function initializeGame() {
-            const t = audioContext.currentTime;
-            masterGain.gain.cancelScheduledValues(t);
-            masterGain.gain.setValueAtTime(1, t);
+  secondCard = this;
+  lockBoard = true;
+  checkForMatch();
+}
 
-            const currentLevelConfig = levels[currentLevelIndex];
-            currentLevelDisplay.textContent = currentLevelConfig.id;
-            totalPairs = currentLevelConfig.pairs;
-            matchedPairs = 0;
-            remainingPairsDisplay.textContent = totalPairs;
-            messageDisplay.innerHTML = '<span style="color:#ff6b81; font-weight:bold;">カードを2まい タップしてね！</span>';
-            timerDisplay.textContent = '0.00';
-            clearInterval(timerIntervalId);
-            timerStarted = false;
-            confettiContainer.innerHTML = '';
+function checkForMatch(){
+  const same = firstCard.dataset.note === secondCard.dataset.note;
+  if (same) {
+    streak++;
+    message.textContent = streak >= 2 ? "れんぞくせいかい きもちいい" : "せいかい いい耳だね";
+    setTimeout(disableCards, 280);
+  } else {
+    streak = 0;
+    message.textContent = "ちがう音だったね もういちど";
+    setTimeout(unflipCards, 920);
+  }
+}
 
-            gameBoard.className = 'game-board ' + currentLevelConfig.gridClass;
-            while(gameBoard.firstChild) gameBoard.removeChild(gameBoard.firstChild);
+function disableCards(){
+  firstCard.removeEventListener("click", flipCard);
+  secondCard.removeEventListener("click", flipCard);
+  firstCard.classList.remove("first-choice");
+  firstCard.classList.add("matched");
+  secondCard.classList.add("matched");
+  burstOnCard(firstCard);
+  burstOnCard(secondCard);
+  playSuccessSound(firstCard.dataset.note);
+  matchedPairs++;
+  remainingDisplay.textContent = totalPairs - matchedPairs;
+  firstCard = null;
+  secondCard = null;
+  hasFlippedCard = false;
+  lockBoard = false;
+  if (matchedPairs === totalPairs) clearLevel();
+}
 
-            const gameNotes = [...currentLevelConfig.notes, ...currentLevelConfig.notes].sort(() => Math.random() - 0.5);
-            const fragment = document.createDocumentFragment();
-            cards = [];
+function burstOnCard(card){
+  const colors = ["#22bd86","#ffc83d","#ff6b9f","#42a5ff"];
+  for (let i = 0; i < 10; i++) {
+    const spark = document.createElement("span");
+    spark.className = "match-spark";
+    spark.style.background = colors[i % colors.length];
+    const angle = (Math.PI * 2 * i) / 10;
+    const distance = 34 + Math.random() * 24;
+    card.appendChild(spark);
+    spark.animate([
+      { transform:"translate(-50%,-50%) scale(1)", opacity:1 },
+      { transform:`translate(calc(-50% + ${Math.cos(angle) * distance}px), calc(-50% + ${Math.sin(angle) * distance}px)) scale(.15)`, opacity:0 }
+    ], { duration:650, easing:"cubic-bezier(.12,.88,.28,1)", fill:"forwards" });
+    setTimeout(() => spark.remove(), 720);
+  }
+}
 
-            gameNotes.forEach(note => {
-                const cardElement = document.createElement('div');
-                cardElement.classList.add('card');
-                cardElement.dataset.note = note;
-                cardElement.innerHTML = `<div class="card-inner"><div class="card-front"></div><div class="card-back"></div></div>`;
-                cardElement.addEventListener('click', flipCard, { passive: true });
-                cards.push(cardElement);
-                fragment.appendChild(cardElement);
-            });
-            gameBoard.appendChild(fragment);
-            
-            resetBoard();
-            isTransitioning = false;
-            displayRanking(currentLevelConfig.id);
+async function playSuccessSound(note){
+  await wait(35);
+  playNote(note, .18, "triangle");
+  await wait(95);
+  playNote("高ド", .2, "triangle");
+}
 
-            // ★変更点: レベル1の時だけヒントを表示する
-            if (currentLevelIndex === 0) {
-                setTimeout(showTutorialHint, 500);
-            }
-        }
+function unflipCards(){
+  firstCard.classList.remove("flipped", "first-choice");
+  secondCard.classList.remove("flipped");
+  firstCard = null;
+  secondCard = null;
+  hasFlippedCard = false;
+  lockBoard = false;
+  message.textContent = "カードをめくってね";
+}
 
-        async function flipCard() {
-            removeTutorialHint();
-            if (isTransitioning) return;
-            if (lockBoard) return;
-            if (this === firstCard) return;
-            
-            if (!timerStarted) {
-                startTimer();
-                timerStarted = true;
-                messageDisplay.textContent = `Lv.${levels[currentLevelIndex].id} スタート！`;
-            }
-            this.classList.add('flipped');
-            playNote(this.dataset.note);
-            if (!hasFlippedCard) {
-                hasFlippedCard = true;
-                firstCard = this;
-                messageDisplay.textContent = 'もう1まい えらんでね！';
-                return;
-            }
-            secondCard = this;
-            lockBoard = true;
-            checkForMatch();
-        }
+async function clearLevel(){
+  lockBoard = true;
+  pendingClearTime = stopTimer();
+  const level = levels[currentLevelIndex];
+  message.textContent = "Lv." + level.id + " クリア";
+  launchConfetti(currentLevelIndex === levels.length - 1);
+  await playLevelFanfare(currentLevelIndex === levels.length - 1);
+  clearTitle.textContent = currentLevelIndex === levels.length - 1 ? "ぜんぶクリア" : "レベルアップ";
+  clearText.textContent = level.reward + "。タイム " + pendingClearTime.toFixed(2) + "秒";
+  playerNameInput.value = localStorage.getItem("otoateMemoryLastName") || "ななしさん";
+  clearOverlay.classList.add("show");
+  playerNameInput.focus();
+  playerNameInput.select();
+}
 
-        function checkForMatch() {
-            const isMatch = firstCard.dataset.note === secondCard.dataset.note;
-            if (isMatch) {
-                messageDisplay.textContent = '✨ すごい！せいかい！ ✨';
-                disableCards();
-            } else {
-                messageDisplay.textContent = 'あれ？ちがうおとだよ';
-                unflipCards();
-            }
-        }
+function completeClear(){
+  const levelId = levels[currentLevelIndex].id;
+  const name = (playerNameInput.value || "ななしさん").trim().slice(0, 10) || "ななしさん";
+  localStorage.setItem("otoateMemoryLastName", name);
+  saveRanking(levelId, pendingClearTime, name);
+  displayRanking(levelId);
+  clearOverlay.classList.remove("show");
+  currentLevelIndex++;
+  if (currentLevelIndex >= levels.length) {
+    currentLevelIndex = 0;
+    message.textContent = "すごい もういちど あそぼう";
+  }
+  initializeGame();
+}
 
-        async function disableCards() {
-            firstCard.removeEventListener('click', flipCard);
-            secondCard.removeEventListener('click', flipCard);
-            firstCard.classList.add('matched');
-            secondCard.classList.add('matched');
-            firstCard.querySelector('.card-front').textContent = firstCard.dataset.note;
-            secondCard.querySelector('.card-front').textContent = secondCard.dataset.note;
-            matchedPairs++;
-            remainingPairsDisplay.textContent = totalPairs - matchedPairs;
-            resetBoard();
-            if (matchedPairs === totalPairs) {
-                const finalTime = stopTimer();
-                const currentLevelId = levels[currentLevelIndex].id;
-                isTransitioning = true;
-                lockBoard = true;
-                const fanfarePromise = (currentLevelIndex === levels.length - 1) ? playGrandFanfareAsync() : playFanfareAsync();
-                messageDisplay.textContent = `Lv.${currentLevelId} クリア！おめでとう！`;
-                launchConfetti();
-                await fanfarePromise;
-                let playerName = prompt(`🎉 クリアおめでとう！ 🎉\nLv.${currentLevelId} タイム: ${finalTime.toFixed(2)} 秒\nなまえをおしえてね！`, "ななしさん");
-                if (!playerName || !playerName.trim()) playerName = "ななしさん";
-                saveRanking(currentLevelId, finalTime, playerName.trim().substring(0, 10));
-                displayRanking(currentLevelId);
-                currentLevelIndex++;
-                if (currentLevelIndex < levels.length) {
-                    messageDisplay.textContent = `つぎは Lv.${levels[currentLevelIndex].id} だよ！`;
-                    initializeGame();
-                } else {
-                    messageDisplay.textContent = '👑 全レベルクリア！すごすぎる！ 👑';
-                    currentLevelIndex = 0;
-                    isTransitioning = false;
-                }
-            }
-        }
+function launchConfetti(big){
+  const colors = ["#ff6b9f","#ffc83d","#26c99a","#42a5ff","#8e70ff","#ff5f57"];
+  const count = big ? 150 : 80;
+  confetti.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement("span");
+    piece.className = "piece";
+    const size = Math.random() * 10 + 7;
+    piece.style.width = size + "px";
+    piece.style.height = Math.random() > .5 ? size + "px" : size * .55 + "px";
+    piece.style.left = Math.random() * 100 + "vw";
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.animate([
+      { transform:"translate3d(0,0,0) rotate(0deg)", opacity:1 },
+      { transform:`translate3d(${Math.random()*130-65}px,105vh,0) rotate(${Math.random()*820}deg)`, opacity:0 }
+    ], { duration:Math.random() * 1700 + 1800, easing:"cubic-bezier(.18,.88,.32,1)", fill:"forwards" });
+    confetti.appendChild(piece);
+  }
+}
 
-        function unflipCards() {
-            setTimeout(() => {
-                firstCard.classList.remove('flipped');
-                secondCard.classList.remove('flipped');
-                resetBoard();
-                messageDisplay.textContent = 'カードをめくってね！';
-            }, 1200);
-        }
+resetButton.addEventListener("click", () => {
+  currentLevelIndex = 0;
+  clearOverlay.classList.remove("show");
+  initializeGame();
+});
+replayButton.addEventListener("click", () => {
+  if (firstCard) {
+    lastHeardNote = firstCard.dataset.note;
+    playNote(lastHeardNote);
+    message.textContent = "この音と おなじ音を さがそう";
+  } else if (lastHeardNote) {
+    playNote(lastHeardNote);
+  } else {
+    message.textContent = "まずカードを1まい タップしてね";
+  }
+});
+saveScoreButton.addEventListener("click", completeClear);
+playerNameInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") completeClear();
+});
 
-        function resetBoard() {
-            [hasFlippedCard, lockBoard] = [false, false];
-            [firstCard, secondCard] = [null, null];
-        }
-
-        function launchConfetti() {
-            const colors = ['#ff9ff3', '#feca57', '#ff6b81', '#48dbfb', '#1dd1a1'];
-            confettiContainer.innerHTML = ''; 
-            const fragment = document.createDocumentFragment();
-            for (let i = 0; i < CONFETTI_COUNT; i++) {
-                const confetti = document.createElement('div');
-                confetti.style.position = 'absolute';
-                confetti.style.width = (Math.random() * 10 + 5) + 'px';
-                confetti.style.height = confetti.style.width;
-                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.top = -20 + 'px';
-                confetti.style.borderRadius = '50%';
-                confetti.animate([
-                    { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
-                    { transform: `translate(${Math.random()*100 - 50}px, 100vh) rotate(${Math.random()*720}deg)`, opacity: 0 }
-                ], { duration: Math.random() * 2000 + 2000, easing: 'cubic-bezier(0.25, 1, 0.5, 1)', fill: 'forwards' });
-                fragment.appendChild(confetti);
-            }
-            confettiContainer.appendChild(fragment);
-        }
-
-        resetButton.addEventListener('click', () => { fadeOutAllAudio(120); currentLevelIndex = 0; initializeGame(); });
-        initializeGame();
-    </script>
+initializeGame();
+</script>
 </body>
 </html>
