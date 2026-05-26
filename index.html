@@ -11,7 +11,7 @@ gtag('js', new Date());
 gtag('config', 'G-9NZQDFD7DW');
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>おとあてメモリー</title>
+<title>ドレミ神経衰弱</title>
 <meta name="description" content="音を聞いて同じ音を探す、幼児・児童向けの音感育成メモリーゲーム。">
 <style>
 :root{
@@ -278,19 +278,6 @@ h1{font-size:clamp(25px,8vw,44px);line-height:1.05;margin:0;letter-spacing:0;col
 .main-btn{background:linear-gradient(180deg,#65e8ad,#22bd86)}
 .sub-btn{background:linear-gradient(180deg,#7cc8ff,#348fe0)}
 .main-btn:active,.sub-btn:active{transform:translateY(5px);box-shadow:0 2px 0 rgba(38,48,68,.18)}
-.ranking{
-  background:rgba(255,255,255,.88);
-  border:2px solid #fff;
-  border-radius:18px;
-  padding:12px;
-  box-shadow:0 12px 28px rgba(38,48,68,.13);
-}
-.ranking h2{margin:0 0 8px;font-size:18px;text-align:center;color:#e8437b}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:8px;border-bottom:1px solid var(--line)}
-th{color:var(--muted)}
-td:last-child{text-align:right}
-tbody tr:first-child td{font-weight:950;color:#e8437b}
 .overlay{
   position:fixed;
   inset:0;
@@ -314,8 +301,8 @@ tbody tr:first-child td{font-weight:950;color:#e8437b}
 }
 .modal h3{font-size:clamp(26px,8vw,38px);margin:0 0 8px;color:#6131bb}
 .modal p{margin:6px 0 12px;font-weight:900;color:#536073;line-height:1.5}
-.name-input{width:100%;min-height:52px;border-radius:14px;border:2px solid var(--line);padding:8px 12px;font:inherit;font-weight:900;text-align:center}
 .modal-actions{display:grid;grid-template-columns:1fr;gap:9px;margin-top:12px}
+.final-choice-actions{grid-template-columns:1fr 1fr}
 @keyframes modalIn{from{transform:translateY(18px) scale(.94);opacity:0}to{transform:none;opacity:1}}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:80;overflow:hidden}
 .piece{position:absolute;top:-20px;border-radius:5px}
@@ -359,7 +346,7 @@ tbody tr:first-child td{font-weight:950;color:#e8437b}
   .level-5-grid{grid-template-columns:repeat(4,1fr);max-width:293px}
   .level-5-grid .card{max-width:clamp(58px, 17.5vw, 68px)}
   .status{
-    order:2;
+    order:4;
     grid-template-columns:repeat(3,1fr);
     gap:5px;
   }
@@ -372,20 +359,20 @@ tbody tr:first-child td{font-weight:950;color:#e8437b}
   .stat small{font-size:10px}
   .stat b{font-size:17px}
   .stars{
-    order:3;
+    order:5;
     min-height:18px;
     gap:2px;
   }
   .star{font-size:15px}
   .message{
-    order:4;
+    order:2;
     min-height:42px;
     border-radius:13px;
     padding:8px 10px;
     font-size:15px;
     box-shadow:0 8px 18px rgba(38,48,68,.12);
   }
-  .controls{order:5;grid-template-columns:1fr 1fr;gap:7px}
+  .controls{order:3;grid-template-columns:1fr 1fr;gap:7px}
   .main-btn,.sub-btn{
     min-height:45px;
     border-radius:14px;
@@ -401,14 +388,6 @@ tbody tr:first-child td{font-weight:950;color:#e8437b}
   }
   h1{font-size:24px}
   .badge{width:44px;height:44px;border-radius:13px;font-size:25px}
-  .ranking{
-    order:7;
-    border-radius:14px;
-    padding:10px;
-  }
-  .ranking h2{font-size:16px}
-  table{font-size:13px}
-  th,td{padding:7px 6px}
 }
 @media (prefers-reduced-motion:reduce){
   *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
@@ -418,9 +397,15 @@ tbody tr:first-child td{font-weight:950;color:#e8437b}
 <body>
 <main class="app">
   <header class="top">
-    <h1>おとあて<br>メモリー</h1>
+    <h1>ドレミ<br>神経衰弱</h1>
     <div class="badge" aria-hidden="true">♫</div>
   </header>
+
+  <section class="board-wrap">
+    <div class="game-board" id="gameBoard"></div>
+  </section>
+
+  <div class="message" id="message">カードを タッチしてね</div>
 
   <section class="status" aria-label="ゲーム情報">
     <div class="stat"><small>レベル</small><b id="levelDisplay">1</b></div>
@@ -429,20 +414,10 @@ tbody tr:first-child td{font-weight:950;color:#e8437b}
   </section>
 
   <div class="stars" id="starDisplay" aria-label="進み具合"></div>
-  <div class="message" id="message">カードを2まい タップしてね</div>
-
-  <section class="board-wrap">
-    <div class="game-board" id="gameBoard"></div>
-  </section>
 
   <section class="controls">
     <button class="main-btn" id="resetButton" type="button">さいしょから</button>
-    <button class="sub-btn" id="replayButton" type="button">おとをもういちど</button>
-  </section>
-
-  <section class="ranking">
-    <h2 id="rankingTitle">ランキング</h2>
-    <table id="rankingTable"></table>
+    <button class="sub-btn" id="replayButton" type="button">おと もう1回</button>
   </section>
 </main>
 
@@ -450,9 +425,12 @@ tbody tr:first-child td{font-weight:950;color:#e8437b}
   <div class="modal">
     <h3 id="clearTitle">レベルクリア</h3>
     <p id="clearText"></p>
-    <input class="name-input" id="playerNameInput" maxlength="10" value="ななしさん" aria-label="なまえ">
-    <div class="modal-actions">
-      <button class="main-btn" id="saveScoreButton" type="button">きろくして つぎへ</button>
+    <div class="modal-actions" id="nextLevelActions">
+      <button class="main-btn" id="nextLevelButton" type="button">つぎへ</button>
+    </div>
+    <div class="modal-actions final-choice-actions" id="finalChoiceActions" hidden>
+      <button class="main-btn" id="playAgainButton" type="button">もういちど</button>
+      <button class="sub-btn" id="quitButton" type="button">やめる</button>
     </div>
   </div>
 </div>
@@ -491,15 +469,16 @@ const remainingDisplay = document.getElementById("remainingDisplay");
 const timerDisplay = document.getElementById("timerDisplay");
 const message = document.getElementById("message");
 const starDisplay = document.getElementById("starDisplay");
-const rankingTitle = document.getElementById("rankingTitle");
-const rankingTable = document.getElementById("rankingTable");
 const resetButton = document.getElementById("resetButton");
 const replayButton = document.getElementById("replayButton");
 const clearOverlay = document.getElementById("clearOverlay");
 const clearTitle = document.getElementById("clearTitle");
 const clearText = document.getElementById("clearText");
-const playerNameInput = document.getElementById("playerNameInput");
-const saveScoreButton = document.getElementById("saveScoreButton");
+const nextLevelActions = document.getElementById("nextLevelActions");
+const nextLevelButton = document.getElementById("nextLevelButton");
+const finalChoiceActions = document.getElementById("finalChoiceActions");
+const playAgainButton = document.getElementById("playAgainButton");
+const quitButton = document.getElementById("quitButton");
 const confetti = document.getElementById("confetti");
 
 let cards = [];
@@ -516,8 +495,6 @@ let timerIntervalId = 0;
 let lastHeardNote = null;
 let pendingClearTime = 0;
 let streak = 0;
-const RANKING_PREFIX = "otoateMemoryRankingLevel";
-const MAX_RANKING = 5;
 
 function createAudioGraph(){
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -630,28 +607,6 @@ function stopTimer(){
   return seconds;
 }
 
-function getRanking(level){
-  try { return JSON.parse(localStorage.getItem(RANKING_PREFIX + level)) || []; }
-  catch(e) { return []; }
-}
-function saveRanking(level, time, name){
-  const ranking = getRanking(level);
-  ranking.push({time, name});
-  ranking.sort((a,b) => a.time - b.time);
-  localStorage.setItem(RANKING_PREFIX + level, JSON.stringify(ranking.slice(0, MAX_RANKING)));
-}
-function displayRanking(level){
-  const ranking = getRanking(level);
-  rankingTitle.textContent = "Lv." + level + " ランキング";
-  const rows = ranking.length
-    ? ranking.map((entry, index) => `<tr><td>${index + 1}位</td><td>${escapeHtml(entry.name)}</td><td>${entry.time.toFixed(2)}秒</td></tr>`).join("")
-    : `<tr><td colspan="3" style="text-align:center">まだ きろくがないよ</td></tr>`;
-  rankingTable.innerHTML = `<thead><tr><th>じゅんい</th><th>なまえ</th><th>タイム</th></tr></thead><tbody>${rows}</tbody>`;
-}
-function escapeHtml(text){
-  return String(text).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-}
-
 function renderStars(){
   starDisplay.innerHTML = levels.map((_, i) => `<span class="star ${i <= currentLevelIndex ? "on" : ""}">⭐</span>`).join("");
 }
@@ -672,12 +627,11 @@ function initializeGame(){
   timerDisplay.textContent = "0.00";
   levelDisplay.textContent = level.id;
   remainingDisplay.textContent = totalPairs;
-  message.textContent = level.id === 1 ? "おなじ音を もう1まい さがそう" : "カードを2まい タップしてね";
+  message.textContent = level.id === 1 ? "カードを タッチしてね" : "カードを2まい タッチしてね";
   gameBoard.className = "game-board " + level.gridClass;
   gameBoard.innerHTML = "";
   confetti.innerHTML = "";
   renderStars();
-  displayRanking(level.id);
 
   const gameNotes = shuffle([...level.notes, ...level.notes]);
   const fragment = document.createDocumentFragment();
@@ -808,23 +762,21 @@ async function clearLevel(){
   lockBoard = true;
   pendingClearTime = stopTimer();
   const level = levels[currentLevelIndex];
+  const finalLevel = currentLevelIndex === levels.length - 1;
   message.textContent = "Lv." + level.id + " クリア";
-  launchConfetti(currentLevelIndex === levels.length - 1);
-  await playLevelFanfare(currentLevelIndex === levels.length - 1);
-  clearTitle.textContent = currentLevelIndex === levels.length - 1 ? "ぜんぶクリア" : "レベルアップ";
-  clearText.textContent = level.reward + "。タイム " + pendingClearTime.toFixed(2) + "秒";
-  playerNameInput.value = localStorage.getItem("otoateMemoryLastName") || "ななしさん";
+  launchConfetti(finalLevel);
+  await playLevelFanfare(finalLevel);
+  clearTitle.textContent = finalLevel ? "ぜんぶクリア" : "レベルアップ";
+  clearText.textContent = finalLevel
+    ? level.reward + "。もういちど あそぶ?"
+    : level.reward + "。タイム " + pendingClearTime.toFixed(2) + "秒";
+  nextLevelActions.hidden = finalLevel;
+  finalChoiceActions.hidden = !finalLevel;
   clearOverlay.classList.add("show");
-  playerNameInput.focus();
-  playerNameInput.select();
+  (finalLevel ? playAgainButton : nextLevelButton).focus();
 }
 
 function completeClear(){
-  const levelId = levels[currentLevelIndex].id;
-  const name = (playerNameInput.value || "ななしさん").trim().slice(0, 10) || "ななしさん";
-  localStorage.setItem("otoateMemoryLastName", name);
-  saveRanking(levelId, pendingClearTime, name);
-  displayRanking(levelId);
   clearOverlay.classList.remove("show");
   currentLevelIndex++;
   if (currentLevelIndex >= levels.length) {
@@ -832,6 +784,18 @@ function completeClear(){
     message.textContent = "すごい もういちど あそぼう";
   }
   initializeGame();
+}
+
+function playAgain(){
+  clearOverlay.classList.remove("show");
+  currentLevelIndex = 0;
+  initializeGame();
+}
+
+function quitGame(){
+  clearOverlay.classList.remove("show");
+  lockBoard = true;
+  message.textContent = "また あそんでね";
 }
 
 function launchConfetti(big){
@@ -867,13 +831,12 @@ replayButton.addEventListener("click", () => {
   } else if (lastHeardNote) {
     playNote(lastHeardNote);
   } else {
-    message.textContent = "まずカードを1まい タップしてね";
+    message.textContent = "カードを1まい タッチしてね";
   }
 });
-saveScoreButton.addEventListener("click", completeClear);
-playerNameInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") completeClear();
-});
+nextLevelButton.addEventListener("click", completeClear);
+playAgainButton.addEventListener("click", playAgain);
+quitButton.addEventListener("click", quitGame);
 
 initializeGame();
 </script>
