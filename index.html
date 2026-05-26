@@ -459,6 +459,9 @@ h1{font-size:clamp(25px,8vw,44px);line-height:1.05;margin:0;letter-spacing:0;col
       <button class="main-btn" id="playAgainButton" type="button">もういちど</button>
       <button class="sub-btn" id="quitButton" type="button">やめる</button>
     </div>
+    <div class="modal-actions" id="quitActions" hidden>
+      <button class="sub-btn" id="closeQuitButton" type="button">おしまい</button>
+    </div>
     <div class="line-offer" id="finalLineOffer" hidden>
       <b>親子音あそび7日間ミニレッスン</b>
       <p>音あての続きと、ピアノを始める前にも楽しめる音感・リズム感あそびをLINEでお届けします。</p>
@@ -512,6 +515,8 @@ const nextLevelButton = document.getElementById("nextLevelButton");
 const finalChoiceActions = document.getElementById("finalChoiceActions");
 const playAgainButton = document.getElementById("playAgainButton");
 const quitButton = document.getElementById("quitButton");
+const quitActions = document.getElementById("quitActions");
+const closeQuitButton = document.getElementById("closeQuitButton");
 const finalLineOffer = document.getElementById("finalLineOffer");
 const finalLineLink = document.getElementById("finalLineLink");
 const confetti = document.getElementById("confetti");
@@ -808,6 +813,7 @@ async function clearLevel(){
     : level.reward + "。タイム " + pendingClearTime.toFixed(2) + "秒";
   nextLevelActions.hidden = finalLevel;
   finalChoiceActions.hidden = !finalLevel;
+  quitActions.hidden = true;
   finalLineOffer.hidden = !finalLevel;
   clearOverlay.classList.add("show");
   (finalLevel ? playAgainButton : nextLevelButton).focus();
@@ -830,9 +836,16 @@ function playAgain(){
 }
 
 function quitGame(){
-  clearOverlay.classList.remove("show");
   lockBoard = true;
   message.textContent = "また あそんでね";
+  clearTitle.textContent = "また あそぼうね";
+  clearText.textContent = "音あそびの続きは、LINEでも受け取れます。";
+  nextLevelActions.hidden = true;
+  finalChoiceActions.hidden = true;
+  quitActions.hidden = false;
+  finalLineOffer.hidden = false;
+  clearOverlay.classList.add("show");
+  finalLineLink.focus();
 }
 
 function launchConfetti(big){
@@ -874,6 +887,9 @@ replayButton.addEventListener("click", () => {
 nextLevelButton.addEventListener("click", completeClear);
 playAgainButton.addEventListener("click", playAgain);
 quitButton.addEventListener("click", quitGame);
+closeQuitButton.addEventListener("click", () => {
+  clearOverlay.classList.remove("show");
+});
 if (lineUrl) {
   finalLineLink.href = lineUrl;
   finalLineLink.target = "_blank";
